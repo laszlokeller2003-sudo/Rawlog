@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#080808" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="RAWLOG" />
+    <meta name="description" content="No Filter. Your Life. Raw. The no-BS life tracking app for people who want to understand themselves deeply." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Google Fonts: Space Grotesk + Inter + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>RAWLOG — Life Journal</title>
+  </head>
+  <body>
+    <script>
+      (function() {
+        function showErrorOverlay(msg) {
+          var overlay = document.getElementById('error-overlay');
+          if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'error-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.background = '#1a0505';
+            overlay.style.color = '#ff8888';
+            overlay.style.padding = '24px';
+            overlay.style.fontFamily = 'monospace';
+            overlay.style.fontSize = '14px';
+            overlay.style.lineHeight = '1.5';
+            overlay.style.zIndex = '999999';
+            overlay.style.overflow = 'auto';
+            overlay.style.whiteSpace = 'pre-wrap';
+            
+            var title = document.createElement('h1');
+            title.textContent = 'RAWLOG - Runtime Debugger';
+            title.style.color = '#ff4444';
+            title.style.fontSize = '20px';
+            title.style.margin = '0 0 16px 0';
+            overlay.appendChild(title);
+            
+            var desc = document.createElement('p');
+            desc.textContent = 'An error occurred during app startup. Details:';
+            desc.style.color = '#cccccc';
+            desc.style.margin = '0 0 16px 0';
+            overlay.appendChild(desc);
+            
+            var code = document.createElement('pre');
+            code.id = 'error-message';
+            code.style.background = '#0a0202';
+            code.style.border = '1px solid #ff3333';
+            code.style.padding = '12px';
+            code.style.borderRadius = '6px';
+            code.style.overflowX = 'auto';
+            overlay.appendChild(code);
+            
+            var resetBtn = document.createElement('button');
+            resetBtn.textContent = 'Clear LocalStorage & Reload';
+            resetBtn.style.marginTop = '20px';
+            resetBtn.style.padding = '10px 16px';
+            resetBtn.style.background = '#ff2020';
+            resetBtn.style.color = '#ffffff';
+            resetBtn.style.border = 'none';
+            resetBtn.style.borderRadius = '4px';
+            resetBtn.style.cursor = 'pointer';
+            resetBtn.style.fontWeight = 'bold';
+            resetBtn.onclick = function() {
+              localStorage.clear();
+              sessionStorage.clear();
+              location.reload();
+            };
+            overlay.appendChild(resetBtn);
+
+            document.body.appendChild(overlay);
+          }
+          document.getElementById('error-message').textContent += msg + '\n\n';
+        }
+
+        window.addEventListener('error', function(event) {
+          if (event.target && event.target.tagName === 'SCRIPT') {
+            showErrorOverlay('Failed to load module script: ' + event.target.src + '\n\nIMPORTANT: If you opened index.html directly from your folder (using the file:// protocol), modern browsers will block ES module scripts due to CORS security policies.\n\nTo view the app, you MUST open: http://localhost:5173/ in your browser while the dev server is running.');
+          } else {
+            showErrorOverlay('Unhandled Error: ' + event.message + '\nFile: ' + event.filename + '\nLine: ' + event.lineno + ':' + event.colno + '\nStack: ' + (event.error ? event.error.stack : 'N/A'));
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          showErrorOverlay('Unhandled Promise Rejection: ' + event.reason + '\nStack: ' + (event.reason && event.reason.stack ? event.reason.stack : 'N/A'));
+        });
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

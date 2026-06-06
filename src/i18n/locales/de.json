@@ -1,0 +1,163 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "log": "Eintragen",
+    "stats": "Statistiken",
+    "dashboards": "Dashboards",
+    "insights": "Einblicke",
+    "profile": "Profil"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "RAWLOG",
+      "tagline": "Kein Filter. Dein Leben. Roh.",
+      "subtitle": "Verfolge alles, was zählt. Substanzen, Schlaf, Stimmung, Geld, Fitness — alles an einem privaten Ort.",
+      "cta": "Kostenlos starten",
+      "noaccount": "Kein Konto erforderlich"
+    },
+    "profile": {
+      "title": "Profil einrichten",
+      "subtitle": "Alles bleibt auf deinem Gerät. Kein Konto nötig.",
+      "name": "Dein Name",
+      "dob": "Geburtsdatum",
+      "sex": "Biologisches Geschlecht",
+      "language": "App-Sprache",
+      "photo": "Profilfoto",
+      "namePlaceholder": "Gib deinen Namen ein",
+      "sexMale": "Männlich",
+      "sexFemale": "Weiblich",
+      "sexOther": "Divers",
+      "sexPrefer": "Keine Angabe"
+    },
+    "lifestyle": {
+      "title": "Was möchtest du tracken?",
+      "subtitle": "Wähle die Kategorien, die für dich wichtig sind. Du kannst dies später ändern.",
+      "categories": "Kategorien",
+      "goals": "Deine Ziele",
+      "reminders": "Tägliche Erinnerung",
+      "reminderNone": "Keine",
+      "reminderDaily": "Täglich",
+      "reminderCustom": "Eigene Uhrzeit",
+      "reminderTime": "Erinnerungszeit",
+      "goalBetterSleep": "Besser schlafen",
+      "goalMoreFitness": "Mehr Fitness",
+      "goalQuitSmoking": "Aufhören zu rauchen",
+      "goalSaveMoney": "Geld sparen",
+      "goalImproveRelationships": "Bessere Beziehungen",
+      "goalReduceStress": "Stress reduzieren",
+      "goalEatHealthier": "Gesünder essen",
+      "goalMoreProductivity": "Mehr Produktivität"
+    },
+    "privacy": {
+      "title": "Deine Daten. Deine Regeln.",
+      "body": "RAWLOG ist local-first. Alle deine Daten bleiben standardmäßig auf diesem Gerät. Keine Cloud, kein Tracking, keine Werbung.\n\nOptional: Aktiviere verschlüsselte Cloud-Synchronisation, um von mehreren Geräten auf deine Daten zuzugreifen.",
+      "toggleLabel": "Verschlüsselte Cloud-Synchronisation aktivieren",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort erstellen",
+      "emailPlaceholder": "du@beispiel.de",
+      "passwordPlaceholder": "Mind. 8 Zeichen"
+    },
+    "ready": {
+      "title": "RAWLOG ist bereit.",
+      "subtitle": "Starte dein Tracking — roh, ehrlich, ungefiltert.",
+      "cta": "Tracking starten"
+    }
+  },
+  "greeting": {
+    "morning": "Guten Morgen",
+    "afternoon": "Guten Tag",
+    "evening": "Guten Abend",
+    "night": "Gute Nacht"
+  },
+  "home": {
+    "todayScore": "Heute",
+    "entries": "Einträge",
+    "habits": "Gewohnheiten",
+    "mood": "Ø Stimmung",
+    "streak": "Tage-Serie",
+    "quickLog": "Schnell eintragen",
+    "recentActivity": "Letzte Aktivität",
+    "noEntries": "Noch nichts eingetragen. Dein PA wartet.",
+    "paInsight": "Dein PA hat einen neuen Einblick →",
+    "todaysHabits": "Heutige Gewohnheiten",
+    "noHabits": "Noch keine Gewohnheiten",
+    "done": "erledigt",
+    "seeAll": "Alle anzeigen"
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "done": "Fertig",
+    "next": "Weiter",
+    "back": "Zurück",
+    "skip": "Überspringen",
+    "continue": "Fortfahren",
+    "optional": "Optional",
+    "loading": "Lädt…",
+    "error": "Etwas ist schiefgelaufen",
+    "retry": "Erneut versuchen",
+    "noData": "Noch keine Daten"
+  },
+  "categories": {
+    "substances": "Substanzen",
+    "intimacy": "Intimität",
+    "fitness": "Fitness",
+    "sleep": "Schlaf",
+    "mood": "Stimmung",
+    "nutrition": "Ernährung",
+    "finance": "Finanzen",
+    "social": "Soziales",
+    "work": "Arbeit",
+    "health": "Gesundheit"
+  },
+  "ai": {
+    "analyzing": "Analysiere deine Daten…",
+    "generateInsights": "Einblicke generieren",
+    "lastAnalyzed": "Zuletzt analysiert",
+    "paTitle": "Persönlicher Assistent",
+    "suggestedPrompts": [
+      "Wie ist mein Schlaf diese Woche?",
+      "Gibt es Muster in meiner Stimmung?",
+      "Erreiche ich meine Fitnessziele?",
+      "Wie viel gebe ich aus?",
+      "Was beeinflusst meine Energie?"
+    ]
+  },
+  "paywall": {
+    "title": "RAWLOG Premium freischalten",
+    "subtitle": "Unbegrenzter Zugang zu allen Funktionen",
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "bestValue": "Bestes Angebot",
+    "cta": "Gratis-Testzeitraum starten",
+    "restore": "Kauf wiederherstellen"
+  },
+  "settings": {
+    "profile": "Profil",
+    "account": "Konto",
+    "tracking": "Tracking",
+    "notifications": "Benachrichtigungen",
+    "security": "Sicherheit & Datenschutz",
+    "data": "Daten & Speicher",
+    "premium": "Premium",
+    "about": "Über die App",
+    "language": "Sprache",
+    "currency": "Währung",
+    "export": "Daten exportieren",
+    "deleteAll": "Alle Daten löschen",
+    "cloudSync": "Cloud-Synchronisation",
+    "appLock": "App-Sperre (PIN)",
+    "dailyReport": "Tagesbericht",
+    "weeklyReport": "Wochenbericht",
+    "version": "Version"
+  },
+  "errors": {
+    "noConnection": "Keine Internetverbindung",
+    "tryAgain": "Bitte versuche es erneut",
+    "loadFailed": "Daten konnten nicht geladen werden",
+    "saveError": "Speichern nicht möglich"
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "nav": {
+    "home": "Home",
+    "log": "Log",
+    "stats": "Stats",
+    "dashboards": "Dashboards",
+    "insights": "Insights",
+    "profile": "Profile"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "RAWLOG",
+      "tagline": "No Filter. Your Life. Raw.",
+      "subtitle": "Track everything that matters. Substances, sleep, mood, money, fitness — all in one private place.",
+      "cta": "Start for free",
+      "noaccount": "No account needed to start"
+    },
+    "profile": {
+      "title": "Set up your profile",
+      "subtitle": "This stays on your device. No account required.",
+      "name": "Your name",
+      "dob": "Date of birth",
+      "sex": "Biological sex",
+      "language": "App language",
+      "photo": "Profile photo",
+      "namePlaceholder": "Enter your name",
+      "sexMale": "Male",
+      "sexFemale": "Female",
+      "sexOther": "Other",
+      "sexPrefer": "Prefer not to say"
+    },
+    "lifestyle": {
+      "title": "What do you want to track?",
+      "subtitle": "Select the categories that matter to you. You can change this later.",
+      "categories": "Categories",
+      "goals": "Your goals",
+      "reminders": "Daily reminder",
+      "reminderNone": "None",
+      "reminderDaily": "Daily",
+      "reminderCustom": "Custom time",
+      "reminderTime": "Reminder time",
+      "goalBetterSleep": "Better sleep",
+      "goalMoreFitness": "More fitness",
+      "goalQuitSmoking": "Quit smoking",
+      "goalSaveMoney": "Save money",
+      "goalImproveRelationships": "Better relationships",
+      "goalReduceStress": "Reduce stress",
+      "goalEatHealthier": "Eat healthier",
+      "goalMoreProductivity": "More productivity"
+    },
+    "privacy": {
+      "title": "Your data. Your rules.",
+      "body": "RAWLOG is local-first. All your data stays on this device by default. No cloud, no tracking, no ads.\n\nOptional: enable encrypted cloud sync to access your data across devices.",
+      "toggleLabel": "Enable encrypted cloud sync",
+      "email": "Email address",
+      "password": "Create password",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Min. 8 characters"
+    },
+    "ready": {
+      "title": "RAWLOG is ready.",
+      "subtitle": "Start tracking your life — raw, honest, unfiltered.",
+      "cta": "Start tracking"
+    }
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "night": "Good night"
+  },
+  "home": {
+    "todayScore": "Today",
+    "entries": "Entries",
+    "habits": "Habits",
+    "mood": "Avg Mood",
+    "streak": "day streak",
+    "quickLog": "Quick Log",
+    "recentActivity": "Recent Activity",
+    "noEntries": "Nothing logged yet. Your PA is waiting.",
+    "paInsight": "Your PA has a new insight →",
+    "todaysHabits": "Today's Habits",
+    "noHabits": "No habits yet",
+    "done": "done",
+    "seeAll": "See all"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "done": "Done",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "continue": "Continue",
+    "optional": "Optional",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "noData": "No data yet"
+  },
+  "categories": {
+    "substances": "Substances",
+    "intimacy": "Intimacy",
+    "fitness": "Fitness",
+    "sleep": "Sleep",
+    "mood": "Mood",
+    "nutrition": "Nutrition",
+    "finance": "Finance",
+    "social": "Social",
+    "work": "Work",
+    "health": "Health"
+  },
+  "ai": {
+    "analyzing": "Analyzing your data…",
+    "generateInsights": "Generate insights",
+    "lastAnalyzed": "Last analyzed",
+    "paTitle": "Personal Assistant",
+    "suggestedPrompts": [
+      "How's my sleep this week?",
+      "Any patterns in my mood?",
+      "Am I hitting my fitness goals?",
+      "How much am I spending?",
+      "What's affecting my energy?"
+    ]
+  },
+  "paywall": {
+    "title": "Unlock RAWLOG Premium",
+    "subtitle": "Get unlimited access to all features",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "bestValue": "Best value",
+    "cta": "Start free trial",
+    "restore": "Restore purchase"
+  },
+  "settings": {
+    "profile": "Profile",
+    "account": "Account",
+    "tracking": "Tracking",
+    "notifications": "Notifications",
+    "security": "Security & Privacy",
+    "data": "Data & Storage",
+    "premium": "Premium",
+    "about": "About",
+    "language": "Language",
+    "currency": "Currency",
+    "export": "Export data",
+    "deleteAll": "Delete all data",
+    "cloudSync": "Cloud sync",
+    "appLock": "App lock (PIN)",
+    "dailyReport": "Daily report",
+    "weeklyReport": "Weekly report",
+    "version": "Version"
+  },
+  "errors": {
+    "noConnection": "No internet connection",
+    "tryAgain": "Please try again",
+    "loadFailed": "Failed to load data",
+    "saveError": "Could not save"
+  }
+}
