@@ -20,6 +20,7 @@ const ProfileScreen = lazy(() => import('@/features/profile/ProfileScreen').then
 const BottomNav = lazy(() => import('@/components/BottomNav').then(m => ({ default: m.BottomNav })))
 const PaywallModal = lazy(() => import('@/components/PaywallModal').then(m => ({ default: m.PaywallModal })))
 const EntryBottomSheet = lazy(() => import('@/features/log/EntryBottomSheet').then(m => ({ default: m.EntryBottomSheet })))
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt'
 
 // Loading fallback
 function ScreenLoader() {
@@ -161,6 +162,7 @@ export default function App() {
   return (
     <>
       <AppContent />
+      <PWAInstallPrompt />
       <Toaster
         position="top-center"
         toastOptions={{
