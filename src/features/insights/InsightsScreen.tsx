@@ -3,10 +3,12 @@ import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/useUIStore'
 import { InsightsTab } from './InsightsTab'
 import { ChatTab } from './ChatTab'
+import { PlanTab } from './PlanTab'
 
 const TABS = [
   { id: 'insights' as const, label: 'Insights' },
   { id: 'chat' as const, label: 'Chat' },
+  { id: 'plan' as const, label: 'Plan' },
 ]
 
 export function InsightsScreen() {
@@ -24,7 +26,7 @@ export function InsightsScreen() {
             <button
               key={tab.id}
               className={cn('pill text-sm', insightsActiveTab === tab.id && 'active')}
-              onClick={() => setInsightsActiveTab(tab.id)}
+              onClick={() => setInsightsActiveTab(tab.id as any)}
             >
               {tab.label}
             </button>
@@ -48,6 +50,17 @@ export function InsightsScreen() {
               transition={{ duration: 0.15 }}
             >
               <InsightsTab />
+            </motion.div>
+          ) : insightsActiveTab === 'plan' ? (
+            <motion.div
+              key="plan"
+              className="absolute inset-0 overflow-y-auto"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.15 }}
+            >
+              <PlanTab />
             </motion.div>
           ) : (
             <motion.div

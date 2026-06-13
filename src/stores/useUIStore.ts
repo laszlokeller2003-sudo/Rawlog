@@ -10,7 +10,7 @@ interface UIState {
   searchQuery: string
   statsTimeFilter: TimeFilter
   activeDashboard: 'finance' | 'body' | 'relationships' | 'productivity'
-  insightsActiveTab: 'insights' | 'chat'
+  insightsActiveTab: 'insights' | 'chat' | 'plan'
   habitsActiveTab: 'habits' | 'goals'
   setActiveTab: (tab: TabId) => void
   openEntrySheet: (category: CategoryId) => void
@@ -20,7 +20,7 @@ interface UIState {
   setSearchQuery: (q: string) => void
   setStatsTimeFilter: (filter: TimeFilter) => void
   setActiveDashboard: (d: UIState['activeDashboard']) => void
-  setInsightsActiveTab: (t: UIState['insightsActiveTab']) => void
+  setInsightsActiveTab: (t: 'insights' | 'chat' | 'plan') => void
   setHabitsActiveTab: (t: UIState['habitsActiveTab']) => void
 }
 
