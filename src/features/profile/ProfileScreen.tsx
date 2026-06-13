@@ -24,6 +24,7 @@ import { useChatStore } from '@/stores/useChatStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { exportJSON, exportCSV } from '@/lib/export'
 import { supabase } from '@/lib/supabase'
+import { signOut as supabaseSignOut, pushToSupabase } from '@/lib/sync'
 import { isTrialActive, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Currency, Language } from '@/types'
@@ -317,7 +318,7 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
 const CURRENCY_CYCLE: Currency[] = ['EUR', 'USD', 'GBP']
 
 export function ProfileScreen() {
-  const { profile, updateProfile, clearAll: clearProfile } = useProfileStore()
+  const { profile, authUserId, updateProfile, clearAll: clearProfile } = useProfileStore()
   const { entries, clearAll: clearEntries } = useEntriesStore()
   const { clearAll: clearHabits } = useHabitsStore()
   const { clearAll: clearGoals } = useGoalsStore()
@@ -395,6 +396,28 @@ export function ProfileScreen() {
     } else {
       updateProfile({ cloudSyncEnabled: false })
       toast.success('Cloud sync disabled')
+    }
+  }
+
+  const handleSyncNow = async () => {
+    const { authUserId } = useProfileStore.getState()
+    if (!authUserId) {
+      toast.error('Sign in to enable cloud sync')
+      return
+    }
+    const t = toast.loading('Syncing…')
+    await pushToSupabase(authUserId)
+    toast.success('Synced!', { id: t })
+  }
+
+  const handleSignOut = async () => {
+    if (!window.confirm('Sign out of your account?')) return
+    try {
+      await supabaseSignOut()
+      updateProfile({ cloudSyncEnabled: false })
+      toast.success('Signed out')
+    } catch {
+      toast.error('Sign out failed')
     }
   }
 
@@ -511,6 +534,21 @@ export function ProfileScreen() {
           value={profile.currency}
           onClick={handleCurrencyCycle}
         />
+        {authUserId ? (
+          <SettingsRow
+            icon={<Cloud size={16} />}
+            label="Sync Now"
+            onClick={handleSyncNow}
+          />
+        ) : null}
+        {authUserId ? (
+          <SettingsRow
+            icon={<X size={16} />}
+            label="Sign Out"
+            danger
+            onClick={handleSignOut}
+          />
+        ) : null}
       </div>
 
       {/* ── NOTIFICATIONS ── */}
