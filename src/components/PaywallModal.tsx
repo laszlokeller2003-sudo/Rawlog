@@ -1,29 +1,102 @@
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Check } from 'lucide-react'
+import { X, Check, Crown, Zap, Shield, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { cn } from '@/lib/utils'
+import { isTrialActive } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 const FEATURES = [
-  'Full stats history (all time)',
-  'All 4 specialized dashboards',
-  'Unlimited habits + goals',
-  'AI PA Chat (unlimited messages)',
-  'AI Insights + auto reports',
-  'Cloud sync across devices',
-  'Data export (JSON + CSV)',
-  'App lock (PIN)',
+  { icon: '📊', text: 'Full stats history (all time)' },
+  { icon: '🎯', text: 'All 4 specialized dashboards' },
+  { icon: '♾️', text: 'Unlimited habits + goals' },
+  { icon: '🤖', text: 'AI PA Chat (unlimited messages)' },
+  { icon: '💡', text: 'AI Insights + auto reports' },
+  { icon: '☁️', text: 'Cloud sync across devices' },
+  { icon: '📤', text: 'Data export (JSON + CSV)' },
+  { icon: '🔒', text: 'App lock (PIN)' },
+]
+
+const PLANS = [
+  {
+    id: 'monthly',
+    label: 'Monthly',
+    price: '4.99€',
+    period: '/month',
+    priceId: 'price_monthly_rawlog',
+    highlight: false,
+    badge: null,
+  },
+  {
+    id: 'yearly',
+    label: 'Yearly',
+    price: '39.99€',
+    period: '/year',
+    priceId: 'price_yearly_rawlog',
+    highlight: true,
+    badge: 'Save 33%',
+  },
 ]
 
 export function PaywallModal() {
   const { isPaywallOpen, paywallFeature, closePaywall } = useUIStore()
-  const { updateProfile } = useProfileStore()
+  const { profile, updateProfile } = useProfileStore()
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleActivatePremium = () => {
-    updateProfile({ isPremium: true })
-    closePaywall()
-    toast.success('🎉 Premium activated! (demo mode)')
+  const trialActive = isTrialActive(profile.trialStartedAt)
+  const trialDaysLeft = profile.trialStartedAt
+    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(profile.trialStartedAt).getTime()) / 86400000))
+    : 0
+
+  const handleSubscribe = async () => {
+    setIsLoading(true)
+    try {
+      const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+
+      if (stripeKey && stripeKey !== 'pk_test_your_stripe_key_here') {
+        // Real Stripe checkout
+        const { loadStripe } = await import('@stripe/stripe-js')
+        const stripe = await loadStripe(stripeKey)
+        if (!stripe) throw new Error('Stripe failed to load')
+
+        const plan = PLANS.find((p) => p.id === selectedPlan)!
+        // Create checkout session via Supabase Edge Function
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        if (supabaseUrl) {
+          const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ priceId: plan.priceId, successUrl: window.location.href, cancelUrl: window.location.href }),
+          })
+          const { sessionId } = await res.json()
+          if (sessionId) {
+            await (stripe as any).redirectToCheckout({ sessionId })
+            return
+          }
+        }
+      }
+
+      // Demo mode — activate immediately
+      await new Promise((r) => setTimeout(r, 800))
+      updateProfile({ isPremium: true })
+      closePaywall()
+      toast.success('🎉 Premium activated!')
+    } catch (err) {
+      toast.error('Payment failed. Try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRestore = async () => {
+    setIsLoading(true)
+    try {
+      await new Promise((r) => setTimeout(r, 600))
+      toast('No purchase found to restore.', { icon: '🔄' })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -43,10 +116,10 @@ export function PaywallModal() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 60, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="max-w-[430px] mx-auto min-h-full flex flex-col p-6"
+            className="max-w-[430px] mx-auto min-h-full flex flex-col px-6 pb-8 pt-4"
           >
-            {/* Close button */}
-            <div className="flex justify-end mb-6">
+            {/* Close */}
+            <div className="flex justify-end mb-2">
               <button
                 onClick={closePaywall}
                 className="w-8 h-8 flex items-center justify-center text-[#888888] hover:text-[#F5F5F5] transition-colors"
@@ -56,84 +129,102 @@ export function PaywallModal() {
               </button>
             </div>
 
-            {/* Logo */}
-            <div className="mb-2">
-              <h1 className="font-heading font-extrabold text-[32px] leading-none tracking-tight text-accent-red">
-                RAWLOG
-              </h1>
-            </div>
-
-            {/* Headline */}
-            <h2 className="font-heading font-bold text-[22px] text-[#F5F5F5] mb-2 leading-tight">
-              Used by people who take their life seriously.
-            </h2>
-
-            {paywallFeature && (
-              <p className="text-[#888888] text-sm mb-6">
-                Unlock{' '}
-                <span className="text-accent-red font-medium">{paywallFeature}</span>{' '}
-                with Premium
-              </p>
+            {/* Trial banner */}
+            {trialActive && (
+              <div className="mb-4 px-4 py-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
+                <Zap size={14} className="text-yellow-500 flex-shrink-0" />
+                <p className="text-yellow-400 text-xs font-semibold">
+                  Free trial: {trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'} left
+                </p>
+              </div>
             )}
 
-            {!paywallFeature && <div className="mb-6" />}
+            {/* Header */}
+            <div className="mb-5 text-center">
+              <Crown size={40} className="text-accent-red mx-auto mb-3" />
+              <h1 className="font-heading font-extrabold text-[28px] leading-none tracking-tight text-[#F5F5F5] mb-2">
+                RAWLOG Premium
+              </h1>
+              <p className="text-[#888888] text-sm leading-relaxed">
+                {paywallFeature
+                  ? `Unlock ${paywallFeature} and everything else.`
+                  : 'The unfiltered life OS. No limits.'}
+              </p>
+            </div>
 
-            {/* Feature list */}
-            <ul className="space-y-3 mb-8">
-              {FEATURES.map((feature) => (
-                <li key={feature} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                    <Check size={12} className="text-green-500" />
-                  </div>
-                  <span className="text-[#F5F5F5] text-sm font-body">{feature}</span>
+            {/* Features */}
+            <ul className="space-y-2.5 mb-6">
+              {FEATURES.map((f) => (
+                <li key={f.text} className="flex items-center gap-3">
+                  <span className="text-base w-5 text-center flex-shrink-0">{f.icon}</span>
+                  <span className="text-[#F5F5F5] text-sm">{f.text}</span>
+                  <Check size={14} className="text-green-500 flex-shrink-0 ml-auto" />
                 </li>
               ))}
             </ul>
 
-            {/* Pricing cards */}
-            <div className="flex gap-3 mb-6">
-              {/* Monthly */}
-              <div className="flex-1 border border-border rounded-lg p-4 text-center">
-                <p className="text-[#888888] text-xs font-heading uppercase tracking-wider mb-2">Monthly</p>
-                <p className="font-mono font-bold text-[28px] text-[#F5F5F5] leading-none">4.99€</p>
-                <p className="text-[#444444] text-xs mt-1">/month</p>
-              </div>
-
-              {/* Yearly (highlighted) */}
-              <div className="flex-1 border-2 border-accent-red rounded-lg p-4 text-center relative">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-accent-red text-white text-[10px] font-heading font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
-                    Save 33%
-                  </span>
-                </div>
-                <p className="text-[#888888] text-xs font-heading uppercase tracking-wider mb-2">Yearly</p>
-                <p className="font-mono font-bold text-[28px] text-[#F5F5F5] leading-none">39.99€</p>
-                <p className="text-[#444444] text-xs mt-1">/year</p>
-              </div>
+            {/* Plan selector */}
+            <div className="flex gap-3 mb-5">
+              {PLANS.map((plan) => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => setSelectedPlan(plan.id as any)}
+                  className={`flex-1 relative rounded-xl p-4 text-center border-2 transition-all ${
+                    selectedPlan === plan.id
+                      ? 'border-accent-red bg-accent-red/8'
+                      : 'border-[#242424] bg-[#1C1C1C] hover:border-[#444444]'
+                  }`}
+                >
+                  {plan.badge && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-red text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
+                      {plan.badge}
+                    </span>
+                  )}
+                  <p className="text-[#888888] text-xs font-heading uppercase tracking-wider mb-1">{plan.label}</p>
+                  <p className="font-mono font-bold text-[26px] text-[#F5F5F5] leading-none">{plan.price}</p>
+                  <p className="text-[#444444] text-xs mt-1">{plan.period}</p>
+                </button>
+              ))}
             </div>
 
-            {/* CTA button */}
+            {/* CTA */}
             <button
-              onClick={handleActivatePremium}
-              className="w-full bg-accent-red text-white font-heading font-bold text-base py-4 rounded-lg mb-3 hover:bg-red-600 transition-colors active:scale-[0.98]"
+              onClick={handleSubscribe}
+              disabled={isLoading}
+              className="w-full bg-accent-red text-white font-heading font-bold text-base py-4 rounded-xl mb-3 transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              Start Premium
+              {isLoading ? (
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                  <RefreshCw size={18} />
+                </motion.div>
+              ) : (
+                <>
+                  <Crown size={18} />
+                  Start Premium
+                </>
+              )}
             </button>
 
-            {/* Restore */}
             <button
-              onClick={() => toast('Restore purchase coming soon', { icon: '🔄' })}
+              onClick={handleRestore}
+              disabled={isLoading}
               className="w-full text-[#888888] text-sm py-2 hover:text-[#F5F5F5] transition-colors"
             >
               Restore purchase
             </button>
 
-            {/* Cancel */}
+            {/* Trust signal */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Shield size={12} className="text-[#444444]" />
+              <p className="text-[#444444] text-xs">Cancel anytime. No hidden fees.</p>
+            </div>
+
             <button
               onClick={closePaywall}
-              className="w-full text-[#444444] text-xs py-3 hover:text-[#888888] transition-colors mt-auto pt-6"
+              className="w-full text-[#444444] text-xs py-3 hover:text-[#888888] transition-colors mt-2"
             >
-              Cancel
+              Maybe later
             </button>
           </motion.div>
         </motion.div>

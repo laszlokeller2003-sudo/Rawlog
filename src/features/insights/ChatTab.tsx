@@ -1,16 +1,20 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useChatStore } from '@/stores/useChatStore'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useHabitsStore } from '@/stores/useHabitsStore'
 import { useGoalsStore } from '@/stores/useGoalsStore'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useUIStore } from '@/stores/useUIStore'
 import { buildDataContext } from '@/lib/dataContext'
 import { streamChat } from '@/lib/ai'
+import { isPremiumOrTrial } from '@/lib/utils'
 import { ChatMessageBubble } from './ChatMessageBubble'
 import { SuggestedPrompts } from './SuggestedPrompts'
+
+const FREE_MESSAGE_LIMIT = 5
 
 export function ChatTab() {
   const { messages, addMessage, updateMessage, appendToMessage, pendingQuestion, setPendingQuestion } = useChatStore()
@@ -18,6 +22,11 @@ export function ChatTab() {
   const { habits } = useHabitsStore()
   const { goals } = useGoalsStore()
   const { profile } = useProfileStore()
+  const { openPaywall } = useUIStore()
+
+  const hasPremium = isPremiumOrTrial(profile.isPremium, profile.trialStartedAt)
+  const userMessageCount = messages.filter((m) => m.role === 'user').length
+  const isAtLimit = !hasPremium && userMessageCount >= FREE_MESSAGE_LIMIT
 
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -35,6 +44,12 @@ export function ChatTab() {
   const handleSend = useCallback(async (content: string = input) => {
     const trimmed = content.trim()
     if (!trimmed || isSending) return
+
+    // Premium gate
+    if (isAtLimit) {
+      openPaywall('unlimited AI chat')
+      return
+    }
 
     setInput('')
     if (textareaRef.current) {
@@ -106,28 +121,49 @@ export function ChatTab() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input area */}
-      <div className="border-t border-border p-3 flex items-end gap-2 bg-bg-surface">
-        <textarea
-          ref={textareaRef}
-          className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted resize-none overflow-hidden focus:border-accent-red focus:outline-none transition-colors"
-          placeholder="Ask your PA anything…"
-          rows={1}
-          value={input}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          disabled={isSending}
-          style={{ maxHeight: '100px' }}
-        />
-        <motion.button
-          className="w-10 h-10 rounded-full bg-accent-red flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40"
-          onClick={() => void handleSend()}
-          disabled={!input.trim() || isSending}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ArrowUp size={18} />
-        </motion.button>
-      </div>
+      {/* Paywall banner or Input area */}
+      {isAtLimit ? (
+        <div className="border-t border-border p-4 bg-bg-surface flex flex-col items-center gap-3 text-center">
+          <Lock size={20} className="text-accent-red" />
+          <p className="text-sm text-text-primary font-semibold">
+            {FREE_MESSAGE_LIMIT} free messages used
+          </p>
+          <p className="text-xs text-text-muted">Upgrade to continue chatting with your AI PA</p>
+          <button
+            onClick={() => openPaywall('unlimited AI chat')}
+            className="w-full bg-accent-red text-white text-sm font-bold py-2.5 rounded-lg"
+          >
+            Upgrade to Premium
+          </button>
+        </div>
+      ) : (
+        <div className="border-t border-border p-3 flex items-end gap-2 bg-bg-surface">
+          {!hasPremium && (
+            <span className="absolute right-16 bottom-[68px] text-[10px] text-text-muted font-mono">
+              {FREE_MESSAGE_LIMIT - userMessageCount} free
+            </span>
+          )}
+          <textarea
+            ref={textareaRef}
+            className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted resize-none overflow-hidden focus:border-accent-red focus:outline-none transition-colors"
+            placeholder="Ask your PA anything…"
+            rows={1}
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            disabled={isSending}
+            style={{ maxHeight: '100px' }}
+          />
+          <motion.button
+            className="w-10 h-10 rounded-full bg-accent-red flex items-center justify-center text-white flex-shrink-0 disabled:opacity-40"
+            onClick={() => void handleSend()}
+            disabled={!input.trim() || isSending}
+            whileTap={{ scale: 0.9 }}
+          >
+            <ArrowUp size={18} />
+          </motion.button>
+        </div>
+      )}
     </div>
   )
 }

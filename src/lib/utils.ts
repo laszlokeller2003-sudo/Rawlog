@@ -120,3 +120,19 @@ export function isTrialActive(trialStartedAt?: string): boolean {
   const diffDays = (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
   return diffDays < 7
 }
+
+// Has premium access (either paid or in trial)
+export function isPremiumOrTrial(isPremium: boolean, trialStartedAt?: string): boolean {
+  return isPremium || isTrialActive(trialStartedAt)
+}
+
+// Gate helper — returns true if action should be allowed
+export function canAccess(
+  feature: string,
+  isPremium: boolean,
+  trialStartedAt?: string
+): boolean {
+  const FREE_FEATURES = ['basic_log', 'mood', 'substances', 'fitness', 'sleep', 'nutrition', 'social', 'work', 'health', 'intimacy', 'finance_basic']
+  if (FREE_FEATURES.includes(feature)) return true
+  return isPremiumOrTrial(isPremium, trialStartedAt)
+}
