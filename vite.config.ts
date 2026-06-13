@@ -85,5 +85,8 @@ export default defineConfig({
   define: {
     'process.env.ANTHROPIC_API_KEY': JSON.stringify(process.env.ANTHROPIC_API_KEY || process.env.VITE_ANTHROPIC_API_KEY || ''),
   },
+  build: {
+    chunkSizeWarningLimit: 700,
+  },
 })
 

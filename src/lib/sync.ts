@@ -180,7 +180,7 @@ export async function pushToSupabase(userId: string) {
       await (supabase as any).from('goals').upsert(goalRows)
     }
 
-    console.log('[Sync] Push complete')
+    
   } catch (err) {
     console.error('[Sync] Push error:', err)
   } finally {
@@ -261,7 +261,7 @@ export async function pullFromSupabase(userId: string) {
       }
     }
 
-    console.log('[Sync] Pull complete')
+    
   } catch (err) {
     console.error('[Sync] Pull error:', err)
   }
