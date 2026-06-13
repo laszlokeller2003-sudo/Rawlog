@@ -5,6 +5,8 @@ import { ChevronLeft, Camera, Check, Cloud } from 'lucide-react'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { DEFAULT_CATEGORIES } from '@/lib/categories'
 import { cn } from '@/lib/utils'
+import { signUpWithEmail, signInWithEmail } from '@/lib/sync'
+import toast from 'react-hot-toast'
 import type { CategoryId, Language, BiologicalSex, ReminderFrequency } from '@/types'
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
@@ -883,11 +885,20 @@ export function OnboardingFlow() {
   )
 
   const handlePrivacyNext = useCallback(
-    (data: PrivacyData) => {
+    async (data: PrivacyData) => {
       updateProfile({ cloudSyncEnabled: data.cloudSyncEnabled })
+      if (data.cloudSyncEnabled && data.email && data.password) {
+        try {
+          await signUpWithEmail(data.email, data.password, profileData.name)
+            .catch(() => signInWithEmail(data.email, data.password))
+          toast.success('Account created & syncing!')
+        } catch {
+          toast.error('Could not create account — continuing offline')
+        }
+      }
       goNext()
     },
-    [updateProfile, goNext]
+    [updateProfile, goNext, profileData.name]
   )
 
   const handleStart = useCallback(() => {
