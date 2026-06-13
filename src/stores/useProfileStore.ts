@@ -19,6 +19,15 @@ const DEFAULT_PROFILE: UserProfile = {
   dailyReportTime: '21:00',
   weeklyReportEnabled: true,
   monthlyReportEnabled: true,
+  scoreWeights: {
+    sleep: 25,
+    fitness: 20,
+    work: 20,
+    finance: 15,
+    social: 10,
+    nutrition: 5,
+    health: 5,
+  },
 }
 
 interface ProfileState {

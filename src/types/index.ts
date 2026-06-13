@@ -247,6 +247,7 @@ export interface UserProfile {
   dailyReportTime: string // HH:MM default "21:00"
   weeklyReportEnabled: boolean
   monthlyReportEnabled: boolean
+  scoreWeights?: Record<string, number>
 }
 
 // ─── App Settings ────────────────────────────────────────────────────────────

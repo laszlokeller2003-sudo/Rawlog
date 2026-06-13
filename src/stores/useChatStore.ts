@@ -8,12 +8,14 @@ interface ChatState {
   insights: Insight[]
   lastInsightAt: string | null
   isGeneratingInsights: boolean
+  pendingQuestion: string | null
   addMessage: (role: ChatMessage['role'], content: string) => ChatMessage
   updateMessage: (id: string, updates: Partial<ChatMessage>) => void
   appendToMessage: (id: string, chunk: string) => void
   clearMessages: () => void
   setInsights: (insights: Insight[]) => void
   setGeneratingInsights: (val: boolean) => void
+  setPendingQuestion: (q: string | null) => void
   clearAll: () => void
 }
 
@@ -24,6 +26,7 @@ export const useChatStore = create<ChatState>()(
       insights: [],
       lastInsightAt: null,
       isGeneratingInsights: false,
+      pendingQuestion: null,
 
       addMessage: (role, content) => {
         const msg: ChatMessage = {
@@ -58,7 +61,9 @@ export const useChatStore = create<ChatState>()(
 
       setGeneratingInsights: (val) => set({ isGeneratingInsights: val }),
 
-      clearAll: () => set({ messages: [], insights: [], lastInsightAt: null }),
+      setPendingQuestion: (q) => set({ pendingQuestion: q }),
+
+      clearAll: () => set({ messages: [], insights: [], lastInsightAt: null, pendingQuestion: null }),
     }),
     {
       name: 'rawlog-chat',

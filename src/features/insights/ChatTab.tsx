@@ -13,7 +13,7 @@ import { ChatMessageBubble } from './ChatMessageBubble'
 import { SuggestedPrompts } from './SuggestedPrompts'
 
 export function ChatTab() {
-  const { messages, addMessage, updateMessage, appendToMessage } = useChatStore()
+  const { messages, addMessage, updateMessage, appendToMessage, pendingQuestion, setPendingQuestion } = useChatStore()
   const { entries } = useEntriesStore()
   const { habits } = useHabitsStore()
   const { goals } = useGoalsStore()
@@ -23,11 +23,6 @@ export function ChatTab() {
   const [isSending, setIsSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
 
   // Auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -75,6 +70,20 @@ export function ChatTab() {
       setIsSending(false)
     }
   }, [input, isSending, messages, entries, habits, goals, profile, addMessage, updateMessage, appendToMessage])
+
+  // Process pending question
+  useEffect(() => {
+    if (pendingQuestion) {
+      const q = pendingQuestion
+      setPendingQuestion(null)
+      void handleSend(q)
+    }
+  }, [pendingQuestion, handleSend, setPendingQuestion])
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

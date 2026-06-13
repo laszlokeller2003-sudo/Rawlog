@@ -6,8 +6,10 @@ import { Flame, ChevronRight } from 'lucide-react'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useHabitsStore } from '@/stores/useHabitsStore'
+import { useGoalsStore } from '@/stores/useGoalsStore'
 import { useChatStore } from '@/stores/useChatStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { useScoreStore } from '@/stores/useScoreStore'
 import { DEFAULT_CATEGORIES, getCategoryById } from '@/lib/categories'
 import { cn, toDateString } from '@/lib/utils'
 import type { CategoryId, MoodFields } from '@/types'
@@ -259,6 +261,18 @@ function FeedEntry({
   )
 }
 
+// ─── Score Band Helper ──────────────────────────────────────────────────────────
+
+function getScoreBand(score: number | null, language: string) {
+  if (score === null || isNaN(score)) return { label: '—', emoji: '—', color: 'var(--text-muted)' }
+  const isDe = language === 'de'
+  if (score < 40) return { label: isDe ? 'Kritisch' : 'Critical', emoji: '🔴', color: '#FF2020' }
+  if (score < 60) return { label: isDe ? 'Ausbaufähig' : 'Needs work', emoji: '🟡', color: '#EAB308' }
+  if (score < 75) return { label: isDe ? 'Gut' : 'Good', emoji: '🟢', color: '#22C55E' }
+  if (score < 90) return { label: isDe ? 'Stark' : 'Strong', emoji: '💪', color: '#22C55E' }
+  return { label: isDe ? 'Außergewöhnlich' : 'Exceptional', emoji: '🔥', color: '#FF2020' }
+}
+
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 
 export function HomeScreen() {
@@ -266,8 +280,51 @@ export function HomeScreen() {
   const { profile } = useProfileStore()
   const { entries, getTodayEntries } = useEntriesStore()
   const { habits, habitLogs } = useHabitsStore()
-  const { insights } = useChatStore()
-  const { openEntrySheet, setActiveTab } = useUIStore()
+  const { insights, setPendingQuestion } = useChatStore()
+  const { openEntrySheet, setActiveTab, setInsightsActiveTab } = useUIStore()
+  const scoreStore = useScoreStore()
+
+  const todayStr = useMemo(() => toDateString(), [])
+  const goals = useGoalsStore((s) => s.goals)
+
+  const { overall, categories, isFrozen, frozenDate } = useMemo(() => {
+    return scoreStore.calculateAllScoresForDate(todayStr)
+  }, [scoreStore, todayStr, entries, habits, goals, profile])
+
+  const yesterdayStr = useMemo(() => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    return yesterday.toISOString().split('T')[0]
+  }, [])
+
+  const yesterdayOverall = useMemo(() => {
+    const histItem = scoreStore.history.find((h) => h.date === yesterdayStr)
+    if (histItem) return histItem.overall_score
+    return scoreStore.calculateAllScoresForDate(yesterdayStr).overall
+  }, [scoreStore, yesterdayStr, entries, habits, goals, profile])
+
+  const diff = useMemo(() => {
+    if (overall === null || yesterdayOverall === null) return 0
+    return overall - yesterdayOverall
+  }, [overall, yesterdayOverall])
+
+  const last7DaysScores = useMemo(() => {
+    const scores: number[] = []
+    const today = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const dStr = d.toISOString().split('T')[0]
+      const histItem = scoreStore.history.find((h) => h.date === dStr)
+      if (histItem && histItem.overall_score !== null) {
+        scores.push(histItem.overall_score)
+      } else {
+        const calculated = scoreStore.calculateAllScoresForDate(dStr).overall
+        scores.push(calculated ?? 50)
+      }
+    }
+    return scores
+  }, [scoreStore, entries, habits, goals, profile])
 
   const todayEntries = useMemo(() => getTodayEntries(), [getTodayEntries, entries])
   const greeting = useGreeting(profile.name, profile.language)
@@ -315,7 +372,7 @@ export function HomeScreen() {
     <div className="screen">
       <div className="px-4 pb-4">
         <motion.div
-          variants={staggerContainer}
+        variants={staggerContainer}
           initial="hidden"
           animate="show"
           className="flex flex-col gap-5"
@@ -355,34 +412,113 @@ export function HomeScreen() {
           </motion.div>
 
           {/* ─ Score Cards ────────────────────────────────────────── */}
-          <motion.div variants={fadeUp} className="grid grid-cols-3 gap-2">
-            <ScoreCard
-              value={todayEntries.length}
-              label={t('home.entries')}
-              color="#F5F5F5"
-            />
-            <ScoreCard
-              value={todayHabits.length > 0 ? `${completedHabitsCount}/${todayHabits.length}` : '—'}
-              label={t('home.habits')}
-              color={
-                todayHabits.length > 0 && completedHabitsCount === todayHabits.length
-                  ? '#22C55E'
-                  : '#F5F5F5'
-              }
-            />
-            <ScoreCard
-              value={avgMood !== null ? `${avgMood}/10` : '—'}
-              label={t('home.mood')}
-              color={
-                avgMood !== null
-                  ? avgMood >= 7
-                    ? '#22C55E'
-                    : avgMood >= 4
-                    ? '#EAB308'
-                    : '#FF2020'
-                  : '#F5F5F5'
-              }
-            />
+          <motion.div variants={fadeUp} className="flex flex-col gap-3">
+            {/* LIFE SCORE card */}
+            <button
+              type="button"
+              className="w-full text-left card flex flex-col p-4 relative overflow-hidden transition-all duration-300 animate-glow"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                boxShadow: diff > 0 ? '0 0 20px rgba(255, 32, 32, 0.2)' : 'none',
+                borderRadius: '16px',
+              }}
+              onClick={() => {
+                setPendingQuestion(
+                  profile.language === 'de'
+                    ? `Erkläre mir, warum mein Life Score heute bei ${overall !== null ? overall : '—'} liegt.`
+                    : `Explain why my Life Score is at ${overall !== null ? overall : '—'} today.`
+                )
+                setInsightsActiveTab('chat')
+                setActiveTab('insights')
+              }}
+            >
+              <div className="flex justify-between items-start w-full">
+                <div>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: 'var(--text-muted)',
+                      fontFamily: "'Space Grotesk', sans-serif",
+                    }}
+                  >
+                    LIFE SCORE
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="font-heading font-bold text-4xl text-[#F5F5F5]">
+                      {overall !== null ? overall : '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary font-medium">
+                    <span>{getScoreBand(overall, profile.language).emoji} {getScoreBand(overall, profile.language).label}</span>
+                    <span className={cn('font-mono', diff > 0 ? 'text-green-500' : diff < 0 ? 'text-accent-red' : 'text-text-muted')}>
+                      {diff > 0 ? '↑ +' : diff < 0 ? '↓ ' : '→ +'}{diff} {profile.language === 'de' ? 'heute' : 'today'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sparkline chart */}
+                <div className="w-24 h-12 flex-shrink-0 flex items-center justify-center">
+                  <svg width="100%" height="100%" viewBox="0 0 100 40" style={{ overflow: 'visible' }}>
+                    <polyline
+                      fill="none"
+                      stroke="var(--accent-red)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={last7DaysScores.map((score, idx) => `${idx * 16.6},${35 - (score / 100) * 30}`).join(' ')}
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Freeze badge if no entries today */}
+              {isFrozen && frozenDate && (
+                <div className="mt-2 pt-2 border-t border-border-subtle text-[10px] text-text-muted">
+                  {profile.language === 'de'
+                    ? `Score vom ${format(new Date(frozenDate), 'dd.MM.yyyy')} · Log heute um ihn zu aktualisieren`
+                    : `Score from ${format(new Date(frozenDate), 'dd/MM/yyyy')} · Log today to update it`}
+                </div>
+              )}
+            </button>
+
+            {/* Category row */}
+            <div className="grid grid-cols-5 gap-1.5 mt-1">
+              {(['fitness', 'sleep', 'finance', 'work', 'social'] as const).map((catId) => {
+                const cat = getCategoryById(catId)
+                const detail = categories[catId]
+                const scoreVal = detail ? detail.score : null
+                const band = getScoreBand(scoreVal, profile.language)
+
+                return (
+                  <button
+                    key={catId}
+                    type="button"
+                    className="flex flex-col items-center justify-between p-2 rounded-xl bg-bg-card border border-border-subtle hover:border-border transition-colors text-center"
+                    onClick={() => {
+                      setPendingQuestion(
+                        profile.language === 'de'
+                          ? `Analysiere meinen ${cat.name} Score für heute.`
+                          : `Analyze my ${cat.name} score for today.`
+                      )
+                      setInsightsActiveTab('chat')
+                      setActiveTab('insights')
+                    }}
+                  >
+                    <span className="text-[10px] font-heading font-semibold text-text-muted truncate w-full">
+                      {cat.name.split(' ')[0]}
+                    </span>
+                    <span className="font-mono text-sm font-bold text-text-primary my-0.5">
+                      {scoreVal !== null ? scoreVal : '—'}
+                    </span>
+                    <span className="text-xs leading-none">{scoreVal !== null ? band.emoji : '—'}</span>
+                  </button>
+                )
+              })}
+            </div>
           </motion.div>
 
           {/* ─ Quick Log ──────────────────────────────────────────── */}
