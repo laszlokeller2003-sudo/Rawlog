@@ -41,25 +41,25 @@ import { HealthForm } from './forms/HealthForm'
 function getDefaultFields(categoryId: CategoryId, currency: Currency): EntryFields {
   switch (categoryId) {
     case 'substances':
-      return { unit: 'pieces' } satisfies SubstanceFields
+      return { unit: 'pieces', quantity: 0, moodBefore: 0, moodAfter: 0 } satisfies SubstanceFields
     case 'intimacy':
-      return {} satisfies IntimacyFields
+      return { rating: 0, partner: '', duration: 0 } satisfies IntimacyFields
     case 'fitness':
-      return {} satisfies FitnessFields
+      return { intensity: 0, duration: 0 } satisfies FitnessFields
     case 'sleep':
-      return {} satisfies SleepFields
+      return { quality: 0, duration: 0, dreams: false } satisfies SleepFields
     case 'mood':
-      return {} satisfies MoodFields
+      return { intensity: 0, emoji: '', triggers: [] } satisfies MoodFields
     case 'nutrition':
-      return {} satisfies NutritionFields
+      return { quality: 0 } satisfies NutritionFields
     case 'finance':
-      return { amount: 0, currency } satisfies FinanceFields
+      return { amount: 0, currency, recurring: false } satisfies FinanceFields
     case 'social':
-      return {} satisfies SocialFields
+      return { quality: 0, who: '' } satisfies SocialFields
     case 'work':
-      return {} satisfies WorkFields
+      return { focusScore: 0, duration: 0 } satisfies WorkFields
     case 'health':
-      return {} satisfies HealthFields
+      return { severity: 0, bodyPart: '' } satisfies HealthFields
     default:
       return {}
   }
@@ -170,12 +170,18 @@ export function EntryBottomSheet() {
   const [useCustomTime, setUseCustomTime] = useState(false)
   const [customTime, setCustomTime] = useState('')
 
-  // Reset state when opening a new category
+  // Reset state when opening a new category or closing
   useEffect(() => {
     if (activeEntryCategory && isEntrySheetOpen) {
-      const cat = getCategoryById(activeEntryCategory, DEFAULT_CATEGORIES)
-      setSubcategory(cat.subcategories[0] ?? '')
+      setSubcategory('') // Selected subcategory: nothing selected
       setFields(getDefaultFields(activeEntryCategory, profile.currency))
+      setNote('')
+      setTagsInput('')
+      setUseCustomTime(false)
+      setCustomTime('')
+    } else if (!isEntrySheetOpen) {
+      setSubcategory('')
+      setFields({})
       setNote('')
       setTagsInput('')
       setUseCustomTime(false)
