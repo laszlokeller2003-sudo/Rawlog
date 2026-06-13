@@ -3,6 +3,8 @@ import { Toaster } from 'react-hot-toast'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useUIStore } from '@/stores/useUIStore'
+import { useEntriesStore } from '@/stores/useEntriesStore'
+import { initNotificationsFromProfile, requestPermission } from '@/lib/notifications'
 
 // Lazy load screens for performance
 const OnboardingFlow = lazy(() => import('@/features/onboarding/OnboardingFlow'))
@@ -141,6 +143,20 @@ export default function App() {
       })
     }
   }, [profile.selectedCategories, updateProfile])
+
+  // Init notifications after onboarding
+  const entries = useEntriesStore((s) => s.entries)
+  useEffect(() => {
+    if (!profile.onboardingComplete) return
+    requestPermission().then((granted) => {
+      if (granted) {
+        const today = new Date().toISOString().split('T')[0]
+        const todayCount = entries.filter((e) => e.timestamp.startsWith(today)).length
+        initNotificationsFromProfile(profile, todayCount)
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.onboardingComplete, profile.dailyReportEnabled, profile.dailyReportTime, profile.weeklyReportEnabled])
 
   return (
     <>

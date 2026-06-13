@@ -25,6 +25,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { exportJSON, exportCSV } from '@/lib/export'
 import { supabase } from '@/lib/supabase'
 import { signOut as supabaseSignOut, pushToSupabase } from '@/lib/sync'
+import { requestPermission, getPermissionState } from '@/lib/notifications'
 import { isTrialActive, cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import type { Currency, Language } from '@/types'
@@ -328,6 +329,14 @@ export function ProfileScreen() {
   const [editProfileOpen, setEditProfileOpen] = useState(false)
   const [pinSetupOpen, setPinSetupOpen] = useState(false)
   const [cloudSyncFormOpen, setCloudSyncFormOpen] = useState(false)
+  const [notifPermission, setNotifPermission] = useState(() => getPermissionState())
+
+  const handleRequestNotifPermission = async () => {
+    const granted = await requestPermission()
+    setNotifPermission(granted ? 'granted' : 'denied')
+    if (granted) toast.success('Notifications enabled!')
+    else toast.error('Notifications blocked in browser settings')
+  }
 
   const trialActive = isTrialActive(profile.trialStartedAt)
   const trialDaysLeft = profile.trialStartedAt
@@ -554,6 +563,14 @@ export function ProfileScreen() {
       {/* ── NOTIFICATIONS ── */}
       <SectionHeader label="Notifications" />
       <div className="border-t border-[#1A1A1A]">
+        {notifPermission !== 'granted' && (
+          <SettingsRow
+            icon={<Bell size={16} />}
+            label={notifPermission === 'denied' ? 'Notifications Blocked' : 'Enable Notifications'}
+            value={notifPermission === 'denied' ? 'Allow in browser settings' : 'Tap to enable'}
+            onClick={notifPermission !== 'denied' ? handleRequestNotifPermission : undefined}
+          />
+        )}
         <SettingsRow
           icon={<Bell size={16} />}
           label="Daily Report"
