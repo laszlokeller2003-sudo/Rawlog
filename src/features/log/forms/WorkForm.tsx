@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { WorkFields } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
+import { useProfileStore } from '@/stores/useProfileStore'
 
 interface WorkFormProps {
   fields: WorkFields
@@ -9,6 +10,7 @@ interface WorkFormProps {
 
 export function WorkForm({ fields, onChange }: WorkFormProps) {
   const [showMore, setShowMore] = useState(false)
+  const { profile } = useProfileStore()
 
   const totalMinutes = fields.duration ?? 0
   const hours = Math.floor(totalMinutes / 60)
@@ -70,6 +72,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
         label="Focus Score"
         value={fields.focusScore ?? 0}
         onChange={(v) => onChange({ ...fields, focusScore: v })}
+        personalGoal={profile.workFocusGoal}
       />
 
       {/* Expand toggle */}

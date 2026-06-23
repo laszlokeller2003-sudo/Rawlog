@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FitnessFields } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
+import { useProfileStore } from '@/stores/useProfileStore'
 
 interface FitnessFormProps {
   fields: FitnessFields
@@ -9,6 +10,7 @@ interface FitnessFormProps {
 
 export function FitnessForm({ fields, onChange }: FitnessFormProps) {
   const [showMore, setShowMore] = useState(false)
+  const { profile } = useProfileStore()
 
   return (
     <div className="space-y-4">
@@ -32,6 +34,7 @@ export function FitnessForm({ fields, onChange }: FitnessFormProps) {
         label="Intensity"
         value={fields.intensity ?? 0}
         onChange={(v) => onChange({ ...fields, intensity: v })}
+        personalGoal={profile.fitnessIntensityGoal}
       />
 
       {/* Expand toggle */}

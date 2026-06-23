@@ -1,20 +1,20 @@
-import { useRef, useState, PointerEvent as ReactPointerEvent } from 'react'
+import { useRef, useEffect, useState, PointerEvent as ReactPointerEvent } from 'react'
 import { motion } from 'framer-motion'
 
-interface RatingSliderProps {
+interface GaugeInputProps {
   value: number
   onChange: (value: number) => void
   label?: string
   personalGoal?: number
-  max?: number
+  color?: string
 }
 
-export function RatingSlider({ value, onChange, label, personalGoal, max = 10 }: RatingSliderProps) {
+export function GaugeInput({ value, onChange, label, personalGoal, color }: GaugeInputProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [isDragging, setIsDragging] = useState(false)
 
-  // Clamp value between 0 and max
-  const safeValue = Math.min(max, Math.max(0, value))
+  // Clamp value between 0 and 10
+  const safeValue = Math.min(10, Math.max(0, value))
 
   const handlePointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -50,25 +50,25 @@ export function RatingSlider({ value, onChange, label, personalGoal, max = 10 }:
       angle = x < 0 ? -Math.PI : 0
     }
 
-    // Map angle from [-PI, 0] to [0, max]
-    let newValue = ((angle + Math.PI) / Math.PI) * max
-    newValue = Math.round(Math.max(0, Math.min(max, newValue)))
+    // Map angle from [-PI, 0] to [0, 10]
+    let newValue = ((angle + Math.PI) / Math.PI) * 10
+    newValue = Math.round(Math.max(0, Math.min(10, newValue)))
     
     if (newValue !== safeValue) {
       onChange(newValue)
     }
   }
 
-  // Calculate needle rotation: -90deg is 0, 90deg is max
-  const rotation = -90 + (safeValue / max) * 180
+  // Calculate needle rotation: -90deg is 0, 90deg is 10
+  const rotation = -90 + (safeValue / 10) * 180
 
   const percentToGoal = personalGoal ? Math.round((safeValue / personalGoal) * 100) : null
 
   return (
-    <div className="flex flex-col items-center select-none w-full mx-auto py-2">
+    <div className="flex flex-col items-center select-none w-full max-w-[280px] mx-auto py-2">
       {label && <span className="input-label mb-4 self-start">{label}</span>}
       
-      <div className="relative w-full max-w-[280px] aspect-[2/1]">
+      <div className="relative w-full aspect-[2/1]">
         <svg
           ref={svgRef}
           width="100%"
@@ -113,7 +113,7 @@ export function RatingSlider({ value, onChange, label, personalGoal, max = 10 }:
               x1="100" y1="20" x2="100" y2="4"
               stroke="var(--text-primary)"
               strokeWidth="2"
-              transform={`rotate(${-90 + (personalGoal / max) * 180} 100 100)`}
+              transform={`rotate(${-90 + (personalGoal / 10) * 180} 100 100)`}
             />
           )}
 
@@ -132,7 +132,7 @@ export function RatingSlider({ value, onChange, label, personalGoal, max = 10 }:
         </svg>
 
         {/* Text inside arc */}
-        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center pointer-events-none pb-2">
+        <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center pointer-events-none">
           <span className="font-heading font-bold text-4xl text-[#F5F5F5] leading-none mb-1">
             {safeValue}
           </span>
@@ -142,7 +142,7 @@ export function RatingSlider({ value, onChange, label, personalGoal, max = 10 }:
             </span>
           ) : (
             <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider font-semibold">
-              / {max}
+              / 10
             </span>
           )}
         </div>

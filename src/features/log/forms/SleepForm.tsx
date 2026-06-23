@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { SleepFields } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
+import { useProfileStore } from '@/stores/useProfileStore'
 
 interface SleepFormProps {
   fields: SleepFields
@@ -9,6 +10,7 @@ interface SleepFormProps {
 
 export function SleepForm({ fields, onChange }: SleepFormProps) {
   const [showMore, setShowMore] = useState(false)
+  const { profile } = useProfileStore()
 
   const totalMinutes = fields.duration ?? 0
   const hours = Math.floor(totalMinutes / 60)
@@ -70,6 +72,7 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
         label="Quality"
         value={fields.quality ?? 0}
         onChange={(v) => onChange({ ...fields, quality: v })}
+        personalGoal={profile.sleepQualityGoal}
       />
 
       {/* Expand toggle */}

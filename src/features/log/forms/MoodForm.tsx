@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { MoodFields, MoodTrigger } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
 import { PillSelector } from '@/components/PillSelector'
+import { useProfileStore } from '@/stores/useProfileStore'
 
 interface MoodFormProps {
   fields: MoodFields
@@ -16,6 +17,7 @@ const TRIGGERS: MoodTrigger[] = [
 
 export function MoodForm({ fields, onChange }: MoodFormProps) {
   const [showMore, setShowMore] = useState(false)
+  const { profile } = useProfileStore()
 
   return (
     <div className="space-y-4">
@@ -45,6 +47,7 @@ export function MoodForm({ fields, onChange }: MoodFormProps) {
         label="Intensity"
         value={fields.intensity ?? 0}
         onChange={(v) => onChange({ ...fields, intensity: v })}
+        personalGoal={profile.moodGoal}
       />
 
       {/* Expand toggle */}
