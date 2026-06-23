@@ -27,10 +27,40 @@ export interface Category {
 // ─── Entry Fields (per category) ────────────────────────────────────────────
 
 export interface SubstanceFields {
+  // Legacy / generic fields
   quantity?: number
-  unit?: 'pieces' | 'ml' | 'mg'
+  unit?: 'pieces' | 'ml' | 'mg' | string
   moodBefore?: number
   moodAfter?: number
+
+  // Joint / Blüten
+  count?: number
+  size?: 'Klein' | 'Mittel' | 'Groß' | 'XL'
+  content?: 'Nur Gras' | 'Mix' | 'Nur Tabak'
+  grams?: number
+  strain?: string
+  with?: string[]
+  method?: 'Bong' | 'Vape' | 'Pfeife' | 'Edible'
+
+  // Zigarette
+  brand?: string
+  selfRolled?: boolean
+
+  // Alkohol
+  alcoholType?: 'Bier' | 'Wein' | 'Spirits' | 'Cocktail' | 'Shot' | 'Sekt'
+  ml?: number
+  percentage?: number
+  standardDrinks?: number
+
+  // Kaffee / Energy Drink
+  coffeeType?: 'Espresso' | 'Filter' | 'Cappuccino' | 'Latte' | 'Cold Brew'
+  caffeineMg?: number
+
+  // Medikament
+  name?: string
+  dose?: number
+  prescribed?: boolean
+  timing?: string
 }
 
 export interface IntimacyFields {

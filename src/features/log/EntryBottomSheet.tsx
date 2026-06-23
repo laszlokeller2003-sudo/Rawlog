@@ -69,10 +69,12 @@ function getDefaultFields(categoryId: CategoryId, currency: Currency): EntryFiel
 
 function CategoryForm({
   categoryId,
+  subcategory,
   fields,
   onChange,
 }: {
   categoryId: CategoryId
+  subcategory: string
   fields: EntryFields
   onChange: (f: EntryFields) => void
 }) {
@@ -80,6 +82,7 @@ function CategoryForm({
     case 'substances':
       return (
         <SubstancesForm
+          subcategory={subcategory}
           fields={fields as SubstanceFields}
           onChange={(f) => onChange(f)}
         />
@@ -268,6 +271,7 @@ export function EntryBottomSheet() {
       <div className="px-4 pb-2">
         <CategoryForm
           categoryId={activeEntryCategory}
+          subcategory={subcategory}
           fields={fields}
           onChange={setFields}
         />
