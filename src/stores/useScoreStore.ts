@@ -677,7 +677,7 @@ export const useScoreStore = create<ScoreState>()(
       clearAll: () => set({ history: [] }),
     }),
     {
-      name: 'rawlog-scores',
+      name: 'lyfe-scores',
       storage: createJSONStorage(() => localStorage),
     }
   )

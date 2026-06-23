@@ -154,7 +154,7 @@ export const useHabitsStore = create<HabitsState>()(
       clearAll: () => set({ habits: [], habitLogs: [] }),
     }),
     {
-      name: 'rawlog-habits',
+      name: 'lyfe-habits',
       storage: createJSONStorage(() => localStorage),
     }
   )

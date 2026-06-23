@@ -369,8 +369,8 @@ export function ProfileScreen() {
       entries: entries,
       exportedAt: new Date().toISOString(),
     }
-    exportJSON(data, 'rawlog-export.json')
-    exportCSV(entries, 'rawlog-entries.csv')
+    exportJSON(data, 'lyfe-export.json')
+    exportCSV(entries, 'lyfe-entries.csv')
     toast.success('Exported JSON + CSV')
   }
 
@@ -727,19 +727,19 @@ export function ProfileScreen() {
         <SettingsRow
           icon={<ExternalLink size={16} />}
           label="Privacy Policy"
-          onClick={() => window.open('https://rawlog.app/privacy', '_blank')}
+          onClick={() => window.open('https://lyfe.app/privacy', '_blank')}
         />
         <SettingsRow
           icon={<Shield size={16} />}
           label="Terms of Service"
-          onClick={() => window.open('https://rawlog.app/terms', '_blank')}
+          onClick={() => window.open('https://lyfe.app/terms', '_blank')}
         />
       </div>
 
       {/* Footer */}
       <div className="px-4 py-6 text-center">
         <p className="text-[#444444] text-[10px] font-body">
-          RAWLOG v1.0.0 — Track everything. Regret nothing.
+          LYFE v1.0.0 — Track everything. Understand yourself.
         </p>
       </div>
     </div>

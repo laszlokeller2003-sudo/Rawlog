@@ -72,7 +72,7 @@ export function DashboardsScreen() {
                 Unlock {activeTab.label} Dashboard
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed mb-6 max-w-xs">
-                Visualize trends, correlation scores, and history of your {activeTab.label.toLowerCase()} entries with RAWLOG Premium.
+                Visualize trends, correlation scores, and history of your {activeTab.label.toLowerCase()} entries with LYFE Premium.
               </p>
               <button
                 type="button"

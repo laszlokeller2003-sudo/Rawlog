@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'RAWLOG — Life Journal',
-        short_name: 'RAWLOG',
-        description: 'No Filter. Your Life. Raw. Track substances, sleep, mood, money, fitness & more.',
+        name: 'LYFE — Life Journal',
+        short_name: 'LYFE',
+        description: 'Track everything. Understand yourself. Track substances, sleep, mood, money, fitness & more.',
         theme_color: '#080808',
         background_color: '#080808',
         display: 'standalone',

@@ -66,7 +66,7 @@ export const useChatStore = create<ChatState>()(
       clearAll: () => set({ messages: [], insights: [], lastInsightAt: null, pendingQuestion: null }),
     }),
     {
-      name: 'rawlog-chat',
+      name: 'lyfe-chat',
       storage: createJSONStorage(() => localStorage),
     }
   )

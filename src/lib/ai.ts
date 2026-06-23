@@ -19,7 +19,7 @@ const MOCK_INSIGHTS: Insight[] = [
   {
     id: '2',
     emoji: '✅',
-    title: 'RAWLOG is set up',
+    title: 'LYFE is set up',
     body: 'Your local-first life tracking is ready. Start logging entries to build up data for real insights.',
     tag: 'positive',
     generatedAt: new Date().toISOString(),
@@ -58,7 +58,7 @@ export async function generateInsights(dataContext: string): Promise<Insight[]> 
 
   // If Anthropic API Key is set, query Claude directly
   if (apiKey) {
-    const prompt = `You are the RAWLOG AI PA, a brutal, data-driven personal assistant for life tracking.
+    const prompt = `You are the LYFE AI PA, a brutal, data-driven personal assistant for life tracking.
 Analyze the user's life tracking data and generate a list of 3 to 5 brutally honest, data-driven insights.
 Focus on correlations, patterns, and areas of concern (e.g. substances, sleep quality, finance vs mood, etc.).
 Be extremely direct and unfiltered.
@@ -164,7 +164,7 @@ export async function streamChat(
 
   // If Anthropic API Key is set, stream chat response directly
   if (apiKey) {
-    const systemPrompt = `You are the RAWLOG AI PA, a brutal, data-driven personal assistant for life tracking.
+    const systemPrompt = `You are the LYFE AI PA, a brutal, data-driven personal assistant for life tracking.
 Here is the user's life tracking data:
 ${dataContext}
 
@@ -260,7 +260,7 @@ Be concise but thorough. Focus on patterns and give brutally honest feedback.`
 
   // Fallback to Mock simulation
   const mockResponse =
-    "I'm your RAWLOG AI PA. Set up your Anthropic API key in environment variables to enable real AI chat. Once configured, I'll have access to all your life tracking data and can give you brutally honest, data-driven insights."
+    "I'm your LYFE AI PA. Set up your Anthropic API key in environment variables to enable real AI chat. Once configured, I'll have access to all your life tracking data and can give you brutally honest, data-driven insights."
   for (const word of mockResponse.split(' ')) {
     await new Promise((r) => setTimeout(r, 60))
     onChunk(word + ' ')

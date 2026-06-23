@@ -9,7 +9,7 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "RAWLOG",
+      "title": "LYFE",
       "tagline": "No Filter. Your Life. Raw.",
       "subtitle": "Track everything that matters. Substances, sleep, mood, money, fitness — all in one private place.",
       "cta": "Start for free",
@@ -50,7 +50,7 @@
     },
     "privacy": {
       "title": "Your data. Your rules.",
-      "body": "RAWLOG is local-first. All your data stays on this device by default. No cloud, no tracking, no ads.\n\nOptional: enable encrypted cloud sync to access your data across devices.",
+      "body": "LYFE is local-first. All your data stays on this device by default. No cloud, no tracking, no ads.\n\nOptional: enable encrypted cloud sync to access your data across devices.",
       "toggleLabel": "Enable encrypted cloud sync",
       "email": "Email address",
       "password": "Create password",
@@ -58,7 +58,7 @@
       "passwordPlaceholder": "Min. 8 characters"
     },
     "ready": {
-      "title": "RAWLOG is ready.",
+      "title": "LYFE is ready.",
       "subtitle": "Start tracking your life — raw, honest, unfiltered.",
       "cta": "Start tracking"
     }
@@ -127,7 +127,7 @@
     ]
   },
   "paywall": {
-    "title": "Unlock RAWLOG Premium",
+    "title": "Unlock LYFE Premium",
     "subtitle": "Get unlimited access to all features",
     "monthly": "Monthly",
     "yearly": "Yearly",

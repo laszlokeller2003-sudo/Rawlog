@@ -1,5 +1,5 @@
 /**
- * RAWLOG Sync Service
+ * LYFE Sync Service
  * Local-first: all data is stored in Zustand (localStorage).
  * When user is authenticated, changes are synced to Supabase.
  */

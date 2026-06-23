@@ -94,7 +94,7 @@ export const useProfileStore = create<ProfileState>()(
         }),
     }),
     {
-      name: 'rawlog-profile',
+      name: 'lyfe-profile',
       storage: createJSONStorage(() => localStorage),
     }
   )

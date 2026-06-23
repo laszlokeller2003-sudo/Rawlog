@@ -73,7 +73,7 @@ export const useGoalsStore = create<GoalsState>()(
       clearAll: () => set({ goals: [] }),
     }),
     {
-      name: 'rawlog-goals',
+      name: 'lyfe-goals',
       storage: createJSONStorage(() => localStorage),
     }
   )

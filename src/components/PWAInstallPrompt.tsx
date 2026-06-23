@@ -1,5 +1,5 @@
 /**
- * PWA Install Prompt — shows a banner encouraging mobile users to install RAWLOG.
+ * PWA Install Prompt — shows a banner encouraging mobile users to install LYFE.
  * Listens for the `beforeinstallprompt` event and provides a native install button.
  */
 
@@ -61,7 +61,7 @@ export function PWAInstallPrompt() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[#F5F5F5] text-sm font-semibold leading-none mb-0.5">Add to Home Screen</p>
-            <p className="text-[#888888] text-xs">Install RAWLOG for the full experience</p>
+            <p className="text-[#888888] text-xs">Install LYFE for the full experience</p>
           </div>
           <button
             onClick={handleInstall}

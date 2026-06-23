@@ -1,5 +1,5 @@
 /**
- * RAWLOG — Notifications Service
+ * LYFE — Notifications Service
  * Handles Web Push permission, scheduled daily/weekly reports,
  * habit reminders, and in-app toasts.
  */
@@ -33,7 +33,7 @@ export function showNotification(payload: NotificationPayload): void {
           body: payload.body,
           icon: payload.icon ?? '/pwa-192x192.png',
           badge: '/pwa-192x192.png',
-          tag: payload.tag ?? 'rawlog',
+          tag: payload.tag ?? 'lyfe',
           data: payload,
           silent: false,
         })
@@ -92,7 +92,7 @@ export function scheduleDailyReport(timeString: string, entriesCount: number): v
 
   scheduleNotification(
     {
-      title: 'RAWLOG Daily Report',
+      title: 'LYFE Daily Report',
       body: entriesCount > 0
         ? `You logged ${entriesCount} entries today. Tap to see your daily analysis.`
         : 'No entries today yet. Take 2 minutes to log your day.',
@@ -118,7 +118,7 @@ export function scheduleWeeklyReport(entriesCount: number): void {
 
   scheduleNotification(
     {
-      title: 'RAWLOG Weekly Summary',
+      title: 'LYFE Weekly Summary',
       body: `${entriesCount} entries this week. Your PA has a new analysis ready.`,
       tag: 'weekly-report',
       icon: '/pwa-192x192.png',

@@ -74,7 +74,7 @@ export const useEntriesStore = create<EntriesState>()(
       clearAll: () => set({ entries: [] }),
     }),
     {
-      name: 'rawlog-entries',
+      name: 'lyfe-entries',
       storage: createJSONStorage(() => localStorage),
     }
   )

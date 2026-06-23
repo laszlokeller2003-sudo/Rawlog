@@ -65,7 +65,7 @@ export function PlanTab() {
       const apiKey =
         import.meta.env.VITE_ANTHROPIC_API_KEY || ''
 
-      const systemPrompt = `You are the RAWLOG AI PA. Analyze the user's life data and create a brutally honest, actionable 7-day improvement plan. Structure it with: Executive Summary, Top 3 Problem Areas (with data references), 7-Day Action Plan (day by day), and Key Metrics to Watch.`
+      const systemPrompt = `You are the LYFE AI PA. Analyze the user's life data and create a brutally honest, actionable 7-day improvement plan. Structure it with: Executive Summary, Top 3 Problem Areas (with data references), 7-Day Action Plan (day by day), and Key Metrics to Watch.`
 
       const userMsg = `Here is my life tracking data:\n${context}\n\nCreate my personalized 7-day improvement plan. Be specific, data-driven, and direct.`
 

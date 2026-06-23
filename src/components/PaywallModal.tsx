@@ -23,7 +23,7 @@ const PLANS = [
     label: 'Monthly',
     price: '4.99€',
     period: '/month',
-    priceId: 'price_monthly_rawlog',
+    priceId: 'price_monthly_lyfe',
     highlight: false,
     badge: null,
   },
@@ -32,7 +32,7 @@ const PLANS = [
     label: 'Yearly',
     price: '39.99€',
     period: '/year',
-    priceId: 'price_yearly_rawlog',
+    priceId: 'price_yearly_lyfe',
     highlight: true,
     badge: 'Save 33%',
   },
@@ -143,7 +143,7 @@ export function PaywallModal() {
             <div className="mb-5 text-center">
               <Crown size={40} className="text-accent-red mx-auto mb-3" />
               <h1 className="font-heading font-extrabold text-[28px] leading-none tracking-tight text-[#F5F5F5] mb-2">
-                RAWLOG Premium
+                LYFE Premium
               </h1>
               <p className="text-[#888888] text-sm leading-relaxed">
                 {paywallFeature
