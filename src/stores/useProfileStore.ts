@@ -19,6 +19,13 @@ const DEFAULT_PROFILE: UserProfile = {
   dailyReportTime: '21:00',
   weeklyReportEnabled: true,
   monthlyReportEnabled: true,
+  scoreGoal: 75,
+  fitnessIntensityGoal: 7,
+  sleepQualityGoal: 8,
+  workFocusGoal: 8,
+  moodGoal: 7,
+  calorieGoal: 2000,
+  waterGoalMl: 2500,
   scoreWeights: {
     sleep: 25,
     fitness: 20,

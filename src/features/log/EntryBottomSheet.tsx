@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import { useUIStore } from '@/stores/useUIStore'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { DEFAULT_CATEGORIES, getCategoryById } from '@/lib/categories'
+import { DEFAULT_CATEGORIES, getCategoryById, getCategoryName } from '@/lib/categories'
 import { BottomSheet } from '@/components/BottomSheet'
 import { PillSelector } from '@/components/PillSelector'
 import { Input } from '@/components/Input'
@@ -231,12 +231,24 @@ export function EntryBottomSheet() {
     <BottomSheet isOpen={isEntrySheetOpen} onClose={closeEntrySheet}>
       {/* Category header */}
       <div className="px-4 pb-3 flex items-center gap-3">
-        <span className="text-2xl leading-none">{category.icon}</span>
+        <span className="text-2xl leading-none">
+          {category.id === 'fitness' ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 10L6 8L16 18L14 20L4 10Z" fill={category.color}/>
+              <path d="M7 5L9 3L11 5L9 7L7 5Z" fill={category.color}/>
+              <path d="M13 19L15 17L17 19L15 21L13 19Z" fill={category.color}/>
+              <path d="M2 12L4 10L6 12L4 14L2 12Z" fill={category.color}/>
+              <path d="M18 20L20 18L22 20L20 22L18 20Z" fill={category.color}/>
+            </svg>
+          ) : (
+            category.icon
+          )}
+        </span>
         <span
           className="font-heading font-bold text-lg"
           style={{ color: category.color }}
         >
-          {category.appLabel ?? category.name}
+          {getCategoryName(category, profile.language)}
         </span>
       </div>
 

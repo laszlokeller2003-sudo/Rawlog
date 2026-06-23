@@ -1,24 +1,23 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Category, CategoryId } from '@/types'
-import { generateId } from '@/lib/utils'
 
 export const DEFAULT_CATEGORIES: Category[] = [
   {
     id: 'substances',
     name: 'Substances',
+    nameDE: 'Substanzen',
     icon: '🌿',
     color: '#A855F7',
-    subcategories: ['Joint', 'Cigarette', 'Alcohol', 'Coffee', 'Energy Drink', 'Medication', 'Other'],
+    subcategories: ['Joint', 'Blüten', 'Zigarette', 'Alkohol', 'Kaffee', 'Energy Drink', 'Medikament', 'Other'],
     enabled: true,
     order: 0,
   },
   {
     id: 'intimacy',
     name: 'Intimacy & Relationships',
+    nameDE: 'Intimität & Beziehungen',
     icon: '❤️',
     color: '#FF2020',
-    appLabel: 'Intimacy & Relationships',
+    appLabel: 'Intimacy',
     subcategories: ['Sex', 'Masturbation', 'Kiss', 'Date', 'Flirt', 'Cuddling', 'Other'],
     enabled: true,
     order: 1,
@@ -26,72 +25,80 @@ export const DEFAULT_CATEGORIES: Category[] = [
   {
     id: 'fitness',
     name: 'Fitness',
-    icon: '💪',
+    nameDE: 'Fitness',
+    icon: '🏋️',
     color: '#22C55E',
-    subcategories: ['Gym', 'Running', 'Cycling', 'Swimming', 'Yoga', 'HIIT', 'Sports', 'Walk', 'Stretching', 'Other'],
+    subcategories: ['Gym', 'Laufen', 'Radfahren', 'Schwimmen', 'Gehen', 'Yoga', 'HIIT', 'Sport', 'Stretching', 'Other'],
     enabled: true,
     order: 2,
   },
   {
     id: 'sleep',
     name: 'Sleep',
+    nameDE: 'Schlaf',
     icon: '😴',
     color: '#3B82F6',
-    subcategories: ['Bedtime', 'Wake up', 'Nap', 'Insomnia', 'Great sleep', 'Bad sleep'],
+    subcategories: ['Schlaf', 'Nickerchen'],
     enabled: true,
     order: 3,
   },
   {
     id: 'mood',
-    name: 'Mood & Mental Health',
+    name: 'Mood',
+    nameDE: 'Stimmung',
     icon: '🧠',
     color: '#EAB308',
-    subcategories: ['Happy', 'Sad', 'Stressed', 'Relaxed', 'Angry', 'Motivated', 'Tired', 'Anxious', 'Euphoric', 'Depressed', 'Neutral'],
+    subcategories: ['Happy', 'Sad', 'Stressed', 'Relaxed', 'Angry', 'Motivated', 'Tired', 'Anxious', 'Euphoric', 'Depressed', 'Neutral', 'Grateful', 'Frustrated', 'Lonely', 'Excited', 'Calm'],
     enabled: true,
     order: 4,
   },
   {
     id: 'nutrition',
     name: 'Nutrition',
+    nameDE: 'Ernährung',
     icon: '🍽️',
     color: '#F97316',
-    subcategories: ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Cheat Meal', 'Fasting', 'Supplements'],
+    subcategories: ['Mahlzeit', 'Wasser', 'Supplement', 'Fasten'],
     enabled: true,
     order: 5,
   },
   {
     id: 'finance',
-    name: 'Money & Finances',
+    name: 'Money & Finance',
+    nameDE: 'Geld & Ausgaben',
     icon: '💰',
     color: '#22C55E',
-    subcategories: ['Expense', 'Income', 'Savings', 'Investment', 'Debt payment', 'Impulse buy', 'Subscription'],
+    subcategories: ['Ausgabe', 'Einnahme', 'Sparen', 'Investition', 'Schulden'],
     enabled: true,
     order: 6,
   },
   {
     id: 'social',
     name: 'Social Life',
+    nameDE: 'Soziales Leben',
     icon: '👥',
     color: '#06B6D4',
-    subcategories: ['Friends', 'Family', 'Partner', 'Party', 'Event', 'Networking', 'Alone time', 'Online call'],
+    subcategories: ['Freunde', 'Familie', 'Partner', 'Party', 'Event', 'Networking', 'Allein', 'Online'],
     enabled: true,
     order: 7,
   },
   {
     id: 'work',
     name: 'Work & Productivity',
+    nameDE: 'Arbeit & Produktivität',
     icon: '⚡',
     color: '#6366F1',
-    subcategories: ['Deep Work', 'Meeting', 'Planning', 'Procrastinated', 'Flow State', 'Overtime', 'Break'],
+    subcategories: ['Deep Work', 'Meeting', 'Planung', 'Prokrastiniert', 'Flow State', 'Überstunden', 'Pause'],
     enabled: true,
     order: 8,
   },
   {
     id: 'health',
-    name: 'Health & Body',
+    name: 'Health',
+    nameDE: 'Gesundheit',
     icon: '🏥',
     color: '#EC4899',
-    subcategories: ['Medication', 'Doctor visit', 'Sick', 'Headache', 'Pain', 'High energy', 'Low energy', 'Supplement'],
+    subcategories: ['Medikament', 'Arzt', 'Krank', 'Symptom', 'Messung', 'Supplement', 'Energie'],
     enabled: true,
     order: 9,
   },
@@ -99,4 +106,9 @@ export const DEFAULT_CATEGORIES: Category[] = [
 
 export function getCategoryById(id: CategoryId, categories: Category[] = DEFAULT_CATEGORIES): Category {
   return categories.find((c) => c.id === id) ?? DEFAULT_CATEGORIES[0]
+}
+
+export function getCategoryName(cat: Category, language: string): string {
+  if (language === 'de' && (cat as any).nameDE) return (cat as any).nameDE
+  return cat.name
 }

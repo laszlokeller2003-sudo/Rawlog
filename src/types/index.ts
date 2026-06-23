@@ -15,6 +15,7 @@ export type CategoryId =
 export interface Category {
   id: CategoryId
   name: string
+  nameDE?: string
   icon: string
   color: string
   appLabel?: string // App Store friendly label
@@ -248,6 +249,23 @@ export interface UserProfile {
   weeklyReportEnabled: boolean
   monthlyReportEnabled: boolean
   scoreWeights?: Record<string, number>
+  // Life Score goal
+  scoreGoal: number // default 75, range 50-100
+  // Body metrics
+  weightKg?: number
+  heightCm?: number
+  // Finance
+  dailyBudget?: number
+  // Nutrition goals
+  calorieGoal?: number
+  proteinGoalG?: number
+  waterGoalMl?: number
+  nutritionGoalType?: 'lose' | 'maintain' | 'gain'
+  // Fitness personal goals (for gauge %)
+  fitnessIntensityGoal?: number // default 7
+  sleepQualityGoal?: number     // default 8
+  workFocusGoal?: number        // default 8
+  moodGoal?: number             // default 7
 }
 
 // ─── App Settings ────────────────────────────────────────────────────────────

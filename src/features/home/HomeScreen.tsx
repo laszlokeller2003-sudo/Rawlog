@@ -10,7 +10,7 @@ import { useGoalsStore } from '@/stores/useGoalsStore'
 import { useChatStore } from '@/stores/useChatStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { useScoreStore } from '@/stores/useScoreStore'
-import { DEFAULT_CATEGORIES, getCategoryById } from '@/lib/categories'
+import { DEFAULT_CATEGORIES, getCategoryById, getCategoryName } from '@/lib/categories'
 import { cn, toDateString } from '@/lib/utils'
 import type { CategoryId, MoodFields } from '@/types'
 
@@ -112,11 +112,13 @@ function ScoreCard({
 // ─── Quick Log Item ───────────────────────────────────────────────────────────
 
 function QuickLogItem({
+  categoryId,
   icon,
   label,
   color,
   onClick,
 }: {
+  categoryId: string
   icon: string
   label: string
   color: string
@@ -133,7 +135,19 @@ function QuickLogItem({
       }}
       onClick={onClick}
     >
-      <span className="quick-log-emoji" style={{ fontSize: '28px' }}>{icon}</span>
+      <span className="quick-log-emoji" style={{ fontSize: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {categoryId === 'fitness' ? (
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 10L6 8L16 18L14 20L4 10Z" fill={color}/>
+            <path d="M7 5L9 3L11 5L9 7L7 5Z" fill={color}/>
+            <path d="M13 19L15 17L17 19L15 21L13 19Z" fill={color}/>
+            <path d="M2 12L4 10L6 12L4 14L2 12Z" fill={color}/>
+            <path d="M18 20L20 18L22 20L20 22L18 20Z" fill={color}/>
+          </svg>
+        ) : (
+          icon
+        )}
+      </span>
       <span className="quick-log-label" style={{ color: '#F5F5F5' }}>{label}</span>
     </button>
   )
@@ -246,7 +260,7 @@ function FeedEntry({
           )}
         </div>
         <span style={{ fontSize: 11, color: '#888888' }}>
-          {cat.name}
+          {getCategoryName(cat, 'en')} {/* Use default lang for now */}
         </span>
       </div>
 
@@ -449,28 +463,46 @@ export function HomeScreen() {
                   </span>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="font-heading font-bold text-4xl text-[#F5F5F5]">
-                      {overall !== null ? overall : '—'}
+                      {overall !== null ? Math.min(100, Math.round((overall / (profile.scoreGoal || 75)) * 100)) : 0}%
+                    </span>
+                    <span className="text-sm text-text-muted font-medium">
+                      {profile.language === 'de' ? `von Ziel ${profile.scoreGoal || 75}` : `of goal ${profile.scoreGoal || 75}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary font-medium">
-                    <span>{getScoreBand(overall, profile.language).emoji} {getScoreBand(overall, profile.language).label}</span>
                     <span className={cn('font-mono', diff > 0 ? 'text-green-500' : diff < 0 ? 'text-accent-red' : 'text-text-muted')}>
-                      {diff > 0 ? '↑ +' : diff < 0 ? '↓ ' : '→ +'}{diff} {profile.language === 'de' ? 'heute' : 'today'}
+                      {diff > 0 ? '↑ +' : diff < 0 ? '↓ ' : '→ +'}{diff}% {profile.language === 'de' ? 'heute' : 'today'}
                     </span>
                   </div>
                 </div>
 
-                {/* Sparkline chart */}
-                <div className="w-24 h-12 flex-shrink-0 flex items-center justify-center">
-                  <svg width="100%" height="100%" viewBox="0 0 100 40" style={{ overflow: 'visible' }}>
-                    <polyline
+                {/* Arc gauge chart */}
+                <div className="w-24 h-16 flex-shrink-0 flex items-end justify-center relative">
+                  <svg width="100%" height="100%" viewBox="0 0 100 50" style={{ overflow: 'visible' }}>
+                    <path
+                      d="M 10 50 A 40 40 0 0 1 90 50"
                       fill="none"
-                      stroke="var(--accent-red)"
-                      strokeWidth="2"
+                      stroke="var(--border-subtle)"
+                      strokeWidth="12"
                       strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points={last7DaysScores.map((score, idx) => `${idx * 16.6},${35 - (score / 100) * 30}`).join(' ')}
                     />
+                    <path
+                      d="M 10 50 A 40 40 0 0 1 90 50"
+                      fill="none"
+                      stroke="url(#scoreGradient)"
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      strokeDasharray="125.6"
+                      strokeDashoffset={125.6 - (125.6 * (overall !== null ? Math.min(100, Math.round((overall / (profile.scoreGoal || 75)) * 100)) : 0)) / 100}
+                      style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                    />
+                    <defs>
+                      <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#3B82F6" />
+                        <stop offset="50%" stopColor="#EAB308" />
+                        <stop offset="100%" stopColor="#FF2020" />
+                      </linearGradient>
+                    </defs>
                   </svg>
                 </div>
               </div>
@@ -501,15 +533,15 @@ export function HomeScreen() {
                     onClick={() => {
                       setPendingQuestion(
                         profile.language === 'de'
-                          ? `Analysiere meinen ${cat.name} Score für heute.`
-                          : `Analyze my ${cat.name} score for today.`
+                          ? `Analysiere meinen ${getCategoryName(cat, profile.language)} Score für heute.`
+                          : `Analyze my ${getCategoryName(cat, profile.language)} score for today.`
                       )
                       setInsightsActiveTab('chat')
                       setActiveTab('insights')
                     }}
                   >
                     <span className="text-[10px] font-heading font-semibold text-text-muted truncate w-full">
-                      {cat.name.split(' ')[0]}
+                      {getCategoryName(cat, profile.language).split(' ')[0]}
                     </span>
                     <span className="font-mono text-sm font-bold text-text-primary my-0.5">
                       {scoreVal !== null ? scoreVal : '—'}
@@ -530,20 +562,21 @@ export function HomeScreen() {
               {quickLogCategories.map((cat) => (
                 <QuickLogItem
                   key={cat.id}
+                  categoryId={cat.id}
                   icon={cat.icon}
                   color={cat.color}
                   label={
                     cat.id === 'substances'
-                      ? 'Subst.'
+                      ? (profile.language === 'de' ? 'Subst.' : 'Subst.')
                       : cat.id === 'intimacy'
-                      ? 'Intimacy'
+                      ? (profile.language === 'de' ? 'Intimität' : 'Intimacy')
                       : cat.id === 'nutrition'
-                      ? 'Food'
+                      ? (profile.language === 'de' ? 'Essen' : 'Food')
                       : cat.id === 'finance'
-                      ? 'Money'
+                      ? (profile.language === 'de' ? 'Geld' : 'Money')
                       : cat.id === 'social'
-                      ? 'Social'
-                      : cat.name.split(' ')[0]
+                      ? (profile.language === 'de' ? 'Soziales' : 'Social')
+                      : getCategoryName(cat, profile.language).split(' ')[0]
                   }
                   onClick={() => openEntrySheet(cat.id)}
                 />
