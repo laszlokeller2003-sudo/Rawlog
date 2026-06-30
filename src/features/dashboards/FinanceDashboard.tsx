@@ -127,7 +127,7 @@ export function FinanceDashboard() {
     thisMonthEntries.forEach((e) => {
       const fields = e.fields as FinanceFields
       const amt = Math.abs(fields.amount ?? 0)
-      if (e.subcategory === 'Income') inc += amt
+      if (e.subcategory === 'Einnahme') inc += amt
       else exp += amt
     })
     return { income: inc, expenses: exp }
@@ -140,7 +140,7 @@ export function FinanceDashboard() {
   const lastMonthTotal = useMemo(
     () =>
       lastMonthEntries
-        .filter((e) => e.subcategory !== 'Income')
+        .filter((e) => e.subcategory !== 'Einnahme')
         .reduce((sum, e) => sum + Math.abs((e.fields as FinanceFields).amount ?? 0), 0),
     [lastMonthEntries]
   )
@@ -170,7 +170,7 @@ export function FinanceDashboard() {
       monthEntries.forEach((e) => {
         const fields = e.fields as FinanceFields
         const amt = Math.abs(fields.amount ?? 0)
-        if (e.subcategory === 'Income') inc += amt
+        if (e.subcategory === 'Einnahme') inc += amt
         else exp += amt
       })
       months.push({
@@ -186,7 +186,7 @@ export function FinanceDashboard() {
   const spendingByTag = useMemo(() => {
     const counts: Record<string, number> = {}
     thisMonthEntries
-      .filter((e) => e.subcategory !== 'Income')
+      .filter((e) => e.subcategory !== 'Einnahme')
       .forEach((e) => {
         const fields = e.fields as FinanceFields
         const tag = fields.categoryTag ?? 'other'
@@ -203,7 +203,7 @@ export function FinanceDashboard() {
   const topExpenses = useMemo(
     () =>
       thisMonthEntries
-        .filter((e) => e.subcategory !== 'Income')
+        .filter((e) => e.subcategory !== 'Einnahme')
         .sort(
           (a, b) =>
             Math.abs((b.fields as FinanceFields).amount ?? 0) -

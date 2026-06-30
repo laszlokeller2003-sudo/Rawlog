@@ -44,10 +44,6 @@ function getDateBoundaries(dateStr: string) {
   monday.setDate(target.getDate() + diffToMonday)
   monday.setHours(0, 0, 0, 0)
 
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  sunday.setHours(23, 59, 59, 999)
-
   const lastMonday = new Date(monday)
   lastMonday.setDate(monday.getDate() - 7)
   const lastSunday = new Date(lastMonday)
@@ -61,7 +57,6 @@ function getDateBoundaries(dateStr: string) {
 
   return {
     monday: monday.toISOString().split('T')[0],
-    sunday: sunday.toISOString().split('T')[0],
     lastMonday: lastMonday.toISOString().split('T')[0],
     lastSunday: lastSunday.toISOString().split('T')[0],
     firstOfMonth: firstOfMonth.toISOString().split('T')[0],
@@ -75,17 +70,45 @@ function getDaysBetween(d1: string, d2: string): number {
   return Math.floor((new Date(d1).getTime() - new Date(d2).getTime()) / (1000 * 60 * 60 * 24))
 }
 
+// Rolling 7-day window (not Monday-based)
+function rolling7Days(entries: Entry[], category: CategoryId, dateStr: string): Entry[] {
+  const end = dateStr
+  const start = new Date(dateStr)
+  start.setDate(start.getDate() - 6)
+  const startStr = start.toISOString().split('T')[0]
+  return entries.filter(
+    (e) => e.category === category &&
+      e.timestamp.split('T')[0] >= startStr &&
+      e.timestamp.split('T')[0] <= end
+  )
+}
+
+function rolling30Days(entries: Entry[], category: CategoryId, dateStr: string): Entry[] {
+  const start = new Date(dateStr)
+  start.setDate(start.getDate() - 29)
+  const startStr = start.toISOString().split('T')[0]
+  return entries.filter(
+    (e) => e.category === category &&
+      e.timestamp.split('T')[0] >= startStr &&
+      e.timestamp.split('T')[0] <= dateStr
+  )
+}
+
 function weekEntries(entries: Entry[], category: CategoryId, dateStr: string) {
   const b = getDateBoundaries(dateStr)
   return entries.filter(
-    (e) => e.category === category && e.timestamp.split('T')[0] >= b.monday && e.timestamp.split('T')[0] <= dateStr
+    (e) => e.category === category &&
+      e.timestamp.split('T')[0] >= b.monday &&
+      e.timestamp.split('T')[0] <= dateStr
   )
 }
 
 function lastWeekEntries(entries: Entry[], category: CategoryId, dateStr: string) {
   const b = getDateBoundaries(dateStr)
   return entries.filter(
-    (e) => e.category === category && e.timestamp.split('T')[0] >= b.lastMonday && e.timestamp.split('T')[0] <= b.lastSunday
+    (e) => e.category === category &&
+      e.timestamp.split('T')[0] >= b.lastMonday &&
+      e.timestamp.split('T')[0] <= b.lastSunday
   )
 }
 
@@ -93,9 +116,30 @@ function avg(values: number[]): number {
   return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
 }
 
+// Consistency multiplier: rewards logging across multiple unique days.
+// 5 unique days in 7 = full score. Fewer days = proportionally lower.
+function consistencyFactor(uniqueDays: number): number {
+  return 0.3 + 0.7 * Math.min(1, uniqueDays / 5)
+}
+
+// ─── Minimum data thresholds ──────────────────────────────────────────────────
+
+const MIN_ENTRIES: Record<CategoryId, number> = {
+  sleep: 3,
+  fitness: 2,
+  mood: 3,
+  nutrition: 3,
+  social: 2,
+  work: 2,
+  health: 2,
+  substances: 2,
+  finance: 2,
+  intimacy: 1,
+}
+
 // ─── Category Score Formulas ──────────────────────────────────────────────────
 
-function calculateFitnessScore(dateStr: string, entries: Entry[], goals: Goal[]): number {
+function calculateFitnessScore(dateStr: string, entries: Entry[], goals: Goal[], uniqueDays: number): number {
   const week = weekEntries(entries, 'fitness', dateStr)
   const lastWeek = lastWeekEntries(entries, 'fitness', dateStr)
 
@@ -116,45 +160,48 @@ function calculateFitnessScore(dateStr: string, entries: Entry[], goals: Goal[])
   }
   const f3 = Math.min(1, streak / 7) * 20
 
-  const f4 = week.length >= lastWeek.length ? 15 : (week.length / Math.max(1, lastWeek.length)) * 15
+  const f4 = week.length > 0 && lastWeek.length === 0
+    ? 0
+    : week.length >= lastWeek.length
+      ? 15
+      : (week.length / Math.max(1, lastWeek.length)) * 15
 
-  return Math.round(f1 + f2 + f3 + f4)
+  return Math.round((f1 + f2 + f3 + f4) * consistencyFactor(uniqueDays))
 }
 
-function calculateSleepScore(dateStr: string, entries: Entry[]): number {
+function calculateSleepScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'sleep', dateStr)
-  if (week.length === 0) return 75
 
   const durations = week.map((e) => (e.fields as any).duration).filter((v) => typeof v === 'number')
-  const avgHours = durations.length > 0 ? avg(durations) / 60 : 7.5
-  const f1 = Math.min(1, avgHours / 7.5) * 35
+  const avgHours = durations.length > 0 ? avg(durations) / 60 : 0
+  const f1 = avgHours > 0 ? Math.min(1, avgHours / 7.5) * 35 : 0
 
   const qualities = week.map((e) => (e.fields as any).quality).filter((v) => typeof v === 'number')
-  const f2 = (avg(qualities) / 10) * 35
+  const f2 = qualities.length > 0 ? (avg(qualities) / 10) * 35 : 0
 
-  let f3 = 20
-  if (week.length > 1) {
+  let f3 = 0
+  if (week.length >= 2) {
     const hours = week.map((e) => new Date(e.timestamp).getHours())
     const meanH = avg(hours)
     const deviations = hours.map((h) => Math.min(Math.abs(h - meanH), 24 - Math.abs(h - meanH)))
     const avgDev = avg(deviations)
-    if (avgDev <= 1) f3 = 20
-    else if (avgDev <= 2) f3 = 10
-    else f3 = 0
+    f3 = avgDev <= 1 ? 20 : avgDev <= 2 ? 10 : 0
   }
 
   const lastWeek = lastWeekEntries(entries, 'sleep', dateStr)
   const lastDurations = lastWeek.map((e) => (e.fields as any).duration).filter((v) => typeof v === 'number')
-  const lastAvgHours = lastDurations.length > 0 ? avg(lastDurations) / 60 : 7.5
-  const f4 = avgHours >= lastAvgHours ? 10 : (avgHours / Math.max(0.1, lastAvgHours)) * 10
+  const lastAvgHours = lastDurations.length > 0 ? avg(lastDurations) / 60 : 0
+  const f4 = lastAvgHours > 0 && avgHours >= lastAvgHours ? 10 : lastAvgHours > 0 ? (avgHours / lastAvgHours) * 10 : 0
 
-  return Math.round(f1 + f2 + f3 + f4)
+  return Math.round((f1 + f2 + f3 + f4) * consistencyFactor(uniqueDays))
 }
 
 function calculateFinanceScore(dateStr: string, entries: Entry[], goals: Goal[]): number {
   const b = getDateBoundaries(dateStr)
   const month = entries.filter(
-    (e) => e.category === 'finance' && e.timestamp.split('T')[0] >= b.firstOfMonth && e.timestamp.split('T')[0] <= dateStr
+    (e) => e.category === 'finance' &&
+      e.timestamp.split('T')[0] >= b.firstOfMonth &&
+      e.timestamp.split('T')[0] <= dateStr
   )
 
   let income = 0, expenses = 0, impulse = 0
@@ -172,7 +219,7 @@ function calculateFinanceScore(dateStr: string, entries: Entry[], goals: Goal[])
   const f1 = savingsRate >= 0.2 ? 40 : savingsRate > 0 ? (savingsRate / 0.2) * 40 : 0
 
   const activeGoals = goals.filter((g) => g.category === 'finance' && !g.achieved)
-  let f2 = 30
+  let f2 = activeGoals.length === 0 ? 20 : 0
   if (activeGoals.length > 0) {
     const onTrack = activeGoals.filter((g) => !g.deadline || new Date(g.deadline) >= new Date(dateStr))
     f2 = (onTrack.length / activeGoals.length) * 30
@@ -182,7 +229,9 @@ function calculateFinanceScore(dateStr: string, entries: Entry[], goals: Goal[])
   const f3 = (1 - impulseRatio) * 20
 
   const lastMonth = entries.filter(
-    (e) => e.category === 'finance' && e.timestamp.split('T')[0] >= b.firstOfLastMonth && e.timestamp.split('T')[0] <= b.lastOfLastMonth
+    (e) => e.category === 'finance' &&
+      e.timestamp.split('T')[0] >= b.firstOfLastMonth &&
+      e.timestamp.split('T')[0] <= b.lastOfLastMonth
   )
   let lastIncome = 0, lastExpenses = 0
   lastMonth.forEach((e) => {
@@ -191,12 +240,12 @@ function calculateFinanceScore(dateStr: string, entries: Entry[], goals: Goal[])
     else if (['Ausgabe', 'Schulden'].includes(e.subcategory)) lastExpenses += amt
   })
   const lastSavingsRate = lastIncome > 0 ? (lastIncome - lastExpenses) / lastIncome : 0
-  const f4 = savingsRate >= lastSavingsRate ? 10 : 0
+  const f4 = lastMonth.length > 0 && savingsRate >= lastSavingsRate ? 10 : 0
 
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateSocialScore(dateStr: string, entries: Entry[]): number {
+function calculateSocialScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'social', dateStr)
 
   const SOCIAL_SUBS = ['Freunde', 'Familie', 'Partner', 'Party', 'Event', 'Networking', 'Online']
@@ -210,30 +259,30 @@ function calculateSocialScore(dateStr: string, entries: Entry[]): number {
   const energyVals = week
     .map((e) => (e.fields as any).energyAfter)
     .filter(Boolean)
-    .map((v) => energyMap[v] ?? 5)
-  const f2 = (avg(energyVals) / 10) * 35 || 17.5
+    .map((v: string) => energyMap[v] ?? 5)
+  const f2 = energyVals.length > 0 ? (avg(energyVals) / 10) * 35 : 0
 
   const qualities = week.map((e) => (e.fields as any).quality).filter((v) => typeof v === 'number')
-  const f3 = (avg(qualities) / 10) * 20 || 10
+  const f3 = qualities.length > 0 ? (avg(qualities) / 10) * 20 : 0
 
   const lastWeek = lastWeekEntries(entries, 'social', dateStr)
-  const f4 = week.length >= lastWeek.length ? 10 : 5
+  const f4 = week.length > 0 && week.length >= lastWeek.length ? 10 : lastWeek.length > 0 ? 5 : 0
 
-  return Math.round(f1 + f2 + f3 + f4)
+  return Math.round((f1 + f2 + f3 + f4) * consistencyFactor(uniqueDays))
 }
 
-function calculateWorkScore(dateStr: string, entries: Entry[], goals: Goal[]): number {
+function calculateWorkScore(dateStr: string, entries: Entry[], goals: Goal[], uniqueDays: number): number {
   const week = weekEntries(entries, 'work', dateStr)
   const lastWeek = lastWeekEntries(entries, 'work', dateStr)
 
   const goalHours = goals.find((g) => g.category === 'work' && !g.achieved)?.targetValue ?? 20
   const deepWorkMins = week
-    .filter((e) => ['Deep Work', e.subcategory].includes('Deep Work') && (e.fields as any).sessionType === 'Deep Work' || e.subcategory === 'Deep Work')
+    .filter((e) => e.subcategory === 'Deep Work' || (e.fields as any).sessionType === 'Deep Work')
     .reduce((sum, e) => sum + ((e.fields as any).duration || 0), 0)
   const f1 = Math.min(1, deepWorkMins / 60 / goalHours) * 40
 
   const focusScores = week.map((e) => (e.fields as any).focusScore).filter((v) => typeof v === 'number')
-  const f2 = (avg(focusScores) / 10) * 30 || 15
+  const f2 = focusScores.length > 0 ? (avg(focusScores) / 10) * 30 : 0
 
   const flowSessions = week.filter(
     (e) => e.subcategory === 'Flow State' || (e.fields as any).sessionType === 'Flow State'
@@ -243,12 +292,12 @@ function calculateWorkScore(dateStr: string, entries: Entry[], goals: Goal[]): n
   const lastDeepMins = lastWeek
     .filter((e) => e.subcategory === 'Deep Work' || (e.fields as any).sessionType === 'Deep Work')
     .reduce((sum, e) => sum + ((e.fields as any).duration || 0), 0)
-  const f4 = deepWorkMins >= lastDeepMins ? 15 : (deepWorkMins / Math.max(0.1, lastDeepMins)) * 15
+  const f4 = week.length > 0 && deepWorkMins >= lastDeepMins ? 15 : lastDeepMins > 0 ? (deepWorkMins / lastDeepMins) * 15 : 0
 
-  return Math.round(f1 + f2 + f3 + f4)
+  return Math.round((f1 + f2 + f3 + f4) * consistencyFactor(uniqueDays))
 }
 
-function calculateNutritionScore(dateStr: string, entries: Entry[]): number {
+function calculateNutritionScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'nutrition', dateStr)
   const lastWeek = lastWeekEntries(entries, 'nutrition', dateStr)
 
@@ -256,7 +305,7 @@ function calculateNutritionScore(dateStr: string, entries: Entry[]): number {
   const f1 = Math.min(1, meals / 14) * 40
 
   const qualities = week.map((e) => (e.fields as any).quality).filter((v) => typeof v === 'number')
-  const f2 = (avg(qualities) / 10) * 35 || 17.5
+  const f2 = qualities.length > 0 ? (avg(qualities) / 10) * 35 : 0
 
   const totalWater = week
     .filter((e) => e.subcategory === 'Wasser')
@@ -264,23 +313,21 @@ function calculateNutritionScore(dateStr: string, entries: Entry[]): number {
   const f3 = Math.min(1, totalWater / 7 / 2000) * 15
 
   const lastMeals = lastWeek.filter((e) => e.subcategory === 'Mahlzeit').length
-  const f4 = meals >= lastMeals ? 10 : 5
+  const f4 = meals > 0 && meals >= lastMeals ? 10 : lastMeals > 0 ? 5 : 0
 
-  return Math.round(f1 + f2 + f3 + f4)
+  return Math.round((f1 + f2 + f3 + f4) * consistencyFactor(uniqueDays))
 }
 
-function calculateHealthScore(dateStr: string, entries: Entry[]): number {
+function calculateHealthScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'health', dateStr)
 
   const medsCount = week.filter((e) => ['Medikament', 'Supplement'].includes(e.subcategory)).length
   const f1 = Math.min(1, medsCount / 7) * 40
 
   const energyEntries = week.filter((e) => e.subcategory === 'Energie')
-  let f2 = 17.5
-  if (energyEntries.length > 0) {
-    const energyVals = energyEntries.map((e) => (e.fields as any).energy ?? 5).filter((v) => typeof v === 'number')
-    f2 = (avg(energyVals) / 10) * 35
-  }
+  const f2 = energyEntries.length > 0
+    ? (avg(energyEntries.map((e) => (e.fields as any).energy ?? 5).filter((v) => typeof v === 'number')) / 10) * 35
+    : 0
 
   const symptoms = week.filter((e) => ['Krank', 'Symptom'].includes(e.subcategory)).length
   let f3 = 25
@@ -290,17 +337,16 @@ function calculateHealthScore(dateStr: string, entries: Entry[]): number {
   else if (symptoms === 4) f3 = 5
   else if (symptoms >= 5) f3 = 0
 
-  return Math.round(f1 + f2 + f3)
+  return Math.round((f1 + f2 + f3) * consistencyFactor(uniqueDays))
 }
 
-function calculateSubstancesScore(dateStr: string, entries: Entry[]): number {
+function calculateSubstancesScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'substances', dateStr)
   const lastWeek = lastWeekEntries(entries, 'substances', dateStr)
 
   const HARD = ['Joint', 'Blüten', 'Zigarette', 'Alkohol']
   const hardCount = week.filter((e) => HARD.includes(e.subcategory)).length
 
-  // Abstinence from hard substances (50%)
   let f1 = 50
   if (hardCount === 0) f1 = 50
   else if (hardCount <= 2) f1 = 38
@@ -308,86 +354,100 @@ function calculateSubstancesScore(dateStr: string, entries: Entry[]): number {
   else if (hardCount <= 10) f1 = 10
   else f1 = 0
 
-  // Caffeine moderation — avg ≤2/day is fine (30%)
   const caffeineCount = week.filter((e) => ['Kaffee', 'Energy Drink'].includes(e.subcategory)).length
   const avgDaily = caffeineCount / 7
   const f2 = avgDaily <= 2 ? 30 : avgDaily <= 3 ? 20 : avgDaily <= 5 ? 10 : 0
 
-  // Trend vs last week — fewer hard uses = better (20%)
   const lastHard = lastWeek.filter((e) => HARD.includes(e.subcategory)).length
-  const f3 = hardCount <= lastHard ? 20 : (lastHard / Math.max(1, hardCount)) * 20
+  const f3 = hardCount <= lastHard ? 20 : lastWeek.length > 0 ? (lastHard / Math.max(1, hardCount)) * 20 : 0
 
-  return Math.round(f1 + f2 + f3)
+  return Math.round((f1 + f2 + f3) * consistencyFactor(uniqueDays))
 }
 
-function calculateMoodScore(dateStr: string, entries: Entry[]): number {
+function calculateMoodScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'mood', dateStr)
-  if (week.length === 0) return 75
 
   const POSITIVE = new Set(['Happy', 'Relaxed', 'Motivated', 'Euphoric', 'Grateful', 'Excited', 'Calm'])
   const NEGATIVE = new Set(['Sad', 'Stressed', 'Angry', 'Anxious', 'Depressed', 'Frustrated', 'Lonely'])
 
-  // Valence-weighted score (50%)
   const valenceScores = week.map((e) => {
     const intensity = (e.fields as any).intensity ?? 5
     const emotion = e.subcategory
     if (POSITIVE.has(emotion)) return intensity
     if (NEGATIVE.has(emotion)) return 10 - intensity
-    return 5 // Tired, Neutral
+    return 5
   })
-  const f1 = (avg(valenceScores) / 10) * 50
+  const f1 = valenceScores.length > 0 ? (avg(valenceScores) / 10) * 50 : 0
 
-  // Trend vs last week (30%)
   const lastWeek = lastWeekEntries(entries, 'mood', dateStr)
   const thisPositive = week.filter((e) => POSITIVE.has(e.subcategory)).length
   const lastPositive = lastWeek.filter((e) => POSITIVE.has(e.subcategory)).length
-  const f2 = thisPositive >= lastPositive ? 30 : (thisPositive / Math.max(1, lastPositive)) * 30
+  const f2 = week.length > 0 && thisPositive >= lastPositive ? 30 : lastWeek.length > 0 ? (thisPositive / Math.max(1, lastPositive)) * 30 : 0
 
-  // Logging consistency — at least 5 unique days this week (20%)
-  const uniqueDays = new Set(week.map((e) => e.timestamp.split('T')[0])).size
   const f3 = Math.min(1, uniqueDays / 5) * 20
 
-  return Math.round(f1 + f2 + f3)
+  return Math.round((f1 + f2 + f3) * consistencyFactor(uniqueDays))
 }
 
-function calculateIntimacyScore(dateStr: string, entries: Entry[]): number {
+function calculateIntimacyScore(dateStr: string, entries: Entry[], uniqueDays: number): number {
   const week = weekEntries(entries, 'intimacy', dateStr)
   const lastWeek = lastWeekEntries(entries, 'intimacy', dateStr)
 
   const CONNECTION = new Set(['Sex', 'Kiss', 'Date', 'Flirt', 'Cuddling'])
   const connections = week.filter((e) => CONNECTION.has(e.subcategory)).length
 
-  // Connection frequency vs 2/week target (40%)
   const f1 = Math.min(1, connections / 2) * 40
 
-  // Partner quality / satisfaction (35%)
   const qualities = week
-    .map((e) => (e.fields as any).partnerQuality ?? (e.fields as any).quality)
+    .map((e) => (e.fields as any).partnerQuality ?? (e.fields as any).quality ?? (e.fields as any).rating)
     .filter((v) => typeof v === 'number')
-  const f2 = qualities.length > 0 ? (avg(qualities) / 10) * 35 : 17.5
+  const f2 = qualities.length > 0 ? (avg(qualities) / 10) * 35 : 0
 
-  // Trend vs last week (25%)
   const lastConnections = lastWeek.filter((e) => CONNECTION.has(e.subcategory)).length
-  const f3 = connections >= lastConnections ? 25 : (connections / Math.max(1, lastConnections)) * 25
+  const f3 = connections >= lastConnections ? 25 : lastWeek.length > 0 ? (connections / Math.max(1, lastConnections)) * 25 : 0
 
-  return Math.round(f1 + f2 + f3)
+  return Math.round((f1 + f2 + f3) * consistencyFactor(uniqueDays))
 }
 
 // ─── Dispatcher ───────────────────────────────────────────────────────────────
 
-function calculateRawScore(cat: CategoryId, dateStr: string, entries: Entry[], goals: Goal[]): number {
+function calculateRawScore(cat: CategoryId, dateStr: string, entries: Entry[], goals: Goal[]): number | null {
+  // Check minimum entries in rolling window
+  const min = MIN_ENTRIES[cat] ?? 2
+  let recentEntries: Entry[]
+
+  if (cat === 'finance') {
+    recentEntries = rolling30Days(entries, cat, dateStr)
+  } else if (cat === 'intimacy') {
+    // Use rolling 14 days for intimacy
+    const start = new Date(dateStr)
+    start.setDate(start.getDate() - 13)
+    const startStr = start.toISOString().split('T')[0]
+    recentEntries = entries.filter(
+      (e) => e.category === cat &&
+        e.timestamp.split('T')[0] >= startStr &&
+        e.timestamp.split('T')[0] <= dateStr
+    )
+  } else {
+    recentEntries = rolling7Days(entries, cat, dateStr)
+  }
+
+  if (recentEntries.length < min) return null
+
+  const uniqueDays = new Set(recentEntries.map((e) => e.timestamp.split('T')[0])).size
+
   switch (cat) {
-    case 'fitness':    return calculateFitnessScore(dateStr, entries, goals)
-    case 'sleep':      return calculateSleepScore(dateStr, entries)
+    case 'fitness':    return calculateFitnessScore(dateStr, entries, goals, uniqueDays)
+    case 'sleep':      return calculateSleepScore(dateStr, entries, uniqueDays)
     case 'finance':    return calculateFinanceScore(dateStr, entries, goals)
-    case 'social':     return calculateSocialScore(dateStr, entries)
-    case 'work':       return calculateWorkScore(dateStr, entries, goals)
-    case 'nutrition':  return calculateNutritionScore(dateStr, entries)
-    case 'health':     return calculateHealthScore(dateStr, entries)
-    case 'substances': return calculateSubstancesScore(dateStr, entries)
-    case 'mood':       return calculateMoodScore(dateStr, entries)
-    case 'intimacy':   return calculateIntimacyScore(dateStr, entries)
-    default:           return 0
+    case 'social':     return calculateSocialScore(dateStr, entries, uniqueDays)
+    case 'work':       return calculateWorkScore(dateStr, entries, goals, uniqueDays)
+    case 'nutrition':  return calculateNutritionScore(dateStr, entries, uniqueDays)
+    case 'health':     return calculateHealthScore(dateStr, entries, uniqueDays)
+    case 'substances': return calculateSubstancesScore(dateStr, entries, uniqueDays)
+    case 'mood':       return calculateMoodScore(dateStr, entries, uniqueDays)
+    case 'intimacy':   return calculateIntimacyScore(dateStr, entries, uniqueDays)
+    default:           return null
   }
 }
 
@@ -439,7 +499,12 @@ export const useScoreStore = create<ScoreState>()(
 
           if (hasToday) {
             const raw = calculateRawScore(catId, dateStr, entries, goals)
-            categoriesResult[catId] = { score: raw, lastScore: raw, status: 'normal' }
+            if (raw === null) {
+              // Today has entries but not enough data yet
+              categoriesResult[catId] = { score: null, lastScore: 0, status: 'grayed_out' }
+            } else {
+              categoriesResult[catId] = { score: raw, lastScore: raw, status: 'normal' }
+            }
             return
           }
 
@@ -456,8 +521,12 @@ export const useScoreStore = create<ScoreState>()(
           const daysSince = getDaysBetween(dateStr, lastDate)
           const lastRaw = calculateRawScore(catId, lastDate, entries, goals)
 
+          if (lastRaw === null) {
+            categoriesResult[catId] = { score: null, lastScore: 0, status: 'grayed_out' }
+            return
+          }
+
           if (daysSince === 1) {
-            // Silent freeze: only first missed day this week gets 100% carry
             const b = getDateBoundaries(dateStr)
             let missedThisWeek = 0
             const c = new Date(dateStr)
@@ -486,9 +555,9 @@ export const useScoreStore = create<ScoreState>()(
           }
         })
 
-        // Weighted overall from categories that have a score
+        // Require at least 2 categories to have scores before showing overall
         const scored = selectedCats.filter((id) => categoriesResult[id].score !== null)
-        if (scored.length === 0) return { overall: null, categories: categoriesResult, isFrozen: false }
+        if (scored.length < 2) return { overall: null, categories: categoriesResult, isFrozen: false }
 
         const totalWeight = scored.reduce((s, id) => s + (weights[id] ?? 0), 0)
         const overall =

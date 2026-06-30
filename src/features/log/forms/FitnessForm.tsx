@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { FitnessFields } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
 import { useProfileStore } from '@/stores/useProfileStore'
@@ -9,14 +10,14 @@ interface FitnessFormProps {
 }
 
 export function FitnessForm({ fields, onChange }: FitnessFormProps) {
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
   const { profile } = useProfileStore()
 
   return (
     <div className="space-y-4">
-      {/* Quick: Duration */}
       <div>
-        <label className="input-label">Duration (minutes)</label>
+        <label className="input-label">{t('forms.durationMin')}</label>
         <input
           className="input-field"
           type="number"
@@ -29,29 +30,27 @@ export function FitnessForm({ fields, onChange }: FitnessFormProps) {
         />
       </div>
 
-      {/* Quick: Intensity */}
       <RatingSlider
-        label="Intensity"
+        label={t('forms.intensity')}
         value={fields.intensity ?? 0}
         onChange={(v) => onChange({ ...fields, intensity: v })}
         personalGoal={profile.fitnessIntensityGoal}
       />
 
-      {/* Expand toggle */}
       <button
         type="button"
         className="btn-ghost text-xs w-full flex items-center justify-center gap-1"
         onClick={() => setShowMore(!showMore)}
       >
         <span>{showMore ? '▲' : '▼'}</span>
-        <span>{showMore ? 'Less details' : 'More details'}</span>
+        <span>{showMore ? t('forms.lessDetails') : t('forms.moreDetails')}</span>
       </button>
 
       {showMore && (
         <>
           <div className="divider" />
           <div>
-            <label className="input-label">Distance (km)</label>
+            <label className="input-label">{t('forms.distanceKm')}</label>
             <input
               className="input-field"
               type="number"
@@ -64,7 +63,7 @@ export function FitnessForm({ fields, onChange }: FitnessFormProps) {
             />
           </div>
           <div>
-            <label className="input-label">Calories burned</label>
+            <label className="input-label">{t('forms.caloriesBurned')}</label>
             <input
               className="input-field"
               type="number"

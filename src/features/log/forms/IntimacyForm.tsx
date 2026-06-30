@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { IntimacyFields } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
 import { Input } from '@/components/Input'
@@ -10,46 +11,45 @@ interface IntimacyFormProps {
 }
 
 export function IntimacyForm({ subcategory, fields, onChange }: IntimacyFormProps) {
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
 
   return (
     <div className="space-y-4">
-      {/* Quick Inputs */}
       <Input
-        label="Partner / Initials"
+        label={t('forms.partnerInitials')}
         value={fields.partner ?? ''}
         onChange={(v) => onChange({ ...fields, partner: v || undefined })}
-        placeholder="Name or alias..."
+        placeholder={t('forms.partnerPlaceholder')}
       />
 
       <RatingSlider
-        label="Rating"
+        label={t('forms.rating')}
         value={fields.rating ?? 0}
         onChange={(v) => onChange({ ...fields, rating: v })}
       />
 
-      {/* Expand toggle */}
       <button
         type="button"
         className="btn-ghost text-xs w-full flex items-center justify-center gap-1"
         onClick={() => setShowMore(!showMore)}
       >
         <span>{showMore ? '▲' : '▼'}</span>
-        <span>{showMore ? 'Less details' : 'More details'}</span>
+        <span>{showMore ? t('forms.lessDetails') : t('forms.moreDetails')}</span>
       </button>
 
       {showMore && (
         <>
           <div className="divider" />
           <Input
-            label="Location (optional)"
+            label={t('forms.locationOptional')}
             value={fields.location ?? ''}
             onChange={(v) => onChange({ ...fields, location: v || undefined })}
-            placeholder="e.g. Home, Hotel..."
+            placeholder={t('forms.locationPlaceholder')}
           />
-          
+
           <div>
-            <label className="input-label">Duration (minutes)</label>
+            <label className="input-label">{t('forms.durationMin')}</label>
             <input
               className="input-field"
               type="number"
@@ -70,7 +70,7 @@ export function IntimacyForm({ subcategory, fields, onChange }: IntimacyFormProp
                   checked={fields.protection ?? false}
                   onChange={(e) => onChange({ ...fields, protection: e.target.checked })}
                 />
-                Protection used
+                {t('forms.protectionUsed')}
               </label>
             </div>
           )}

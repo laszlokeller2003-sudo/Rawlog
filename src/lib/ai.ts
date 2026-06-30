@@ -5,6 +5,17 @@ const EDGE_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`
   : null
 
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+
+function edgeHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (SUPABASE_ANON_KEY) {
+    h['apikey'] = SUPABASE_ANON_KEY
+    h['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`
+  }
+  return h
+}
+
 const MOCK_INSIGHTS: Insight[] = [
   {
     id: '1',
@@ -57,7 +68,7 @@ export async function generateInsights(dataContext: string): Promise<Insight[]> 
   try {
     const res = await fetch(EDGE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: edgeHeaders(),
       body: JSON.stringify({ type: 'insights', data: dataContext }),
     })
 
@@ -88,7 +99,7 @@ export async function streamChat(
 
   const res = await fetch(EDGE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: edgeHeaders(),
     body: JSON.stringify({ type: 'chat', messages, data: dataContext }),
   })
 

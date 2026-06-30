@@ -512,18 +512,31 @@ export function HomeScreen() {
                     LIFE SCORE
                   </span>
                   <div className="flex items-baseline gap-2 mt-1">
-                    <span className="font-heading font-bold text-4xl text-[#F5F5F5]">
-                      {overall !== null ? Math.min(100, Math.round((overall / (profile.scoreGoal || 75)) * 100)) : 0}%
-                    </span>
-                    <span className="text-sm text-text-muted font-medium">
-                      {profile.language === 'de' ? `von Ziel ${profile.scoreGoal || 75}` : `of goal ${profile.scoreGoal || 75}`}
-                    </span>
+                    {overall !== null ? (
+                      <>
+                        <span className="font-heading font-bold text-4xl text-[#F5F5F5]">
+                          {Math.min(100, Math.round((overall / (profile.scoreGoal || 75)) * 100))}%
+                        </span>
+                        <span className="text-sm text-text-muted font-medium">
+                          {profile.language === 'de' ? `von Ziel ${profile.scoreGoal || 75}` : `of goal ${profile.scoreGoal || 75}`}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-heading font-bold text-4xl" style={{ color: '#444444' }}>—</span>
+                        <span className="text-xs font-medium" style={{ color: '#444444' }}>
+                          {t('score.moreDataNeeded')}
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary font-medium">
-                    <span className={cn('font-mono', diff > 0 ? 'text-green-500' : diff < 0 ? 'text-accent-red' : 'text-text-muted')}>
-                      {diff > 0 ? '↑ +' : diff < 0 ? '↓ ' : '→ +'}{diff}% {profile.language === 'de' ? 'heute' : 'today'}
-                    </span>
-                  </div>
+                  {overall !== null && (
+                    <div className="flex items-center gap-2 mt-1 text-xs text-text-secondary font-medium">
+                      <span className={cn('font-mono', diff > 0 ? 'text-green-500' : diff < 0 ? 'text-accent-red' : 'text-text-muted')}>
+                        {diff > 0 ? '↑ +' : diff < 0 ? '↓ ' : '→ +'}{diff}% {profile.language === 'de' ? 'heute' : 'today'}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Arc gauge chart */}
@@ -579,7 +592,7 @@ export function HomeScreen() {
                   <button
                     key={catId}
                     type="button"
-                    className="flex flex-col items-center justify-between p-2 rounded-xl bg-bg-card border border-border-subtle hover:border-border transition-colors text-center"
+                    className="flex flex-col items-center justify-between p-2 rounded-lg bg-bg-card border border-border-subtle hover:border-border transition-colors text-center"
                     onClick={() => {
                       setPendingQuestion(
                         profile.language === 'de'

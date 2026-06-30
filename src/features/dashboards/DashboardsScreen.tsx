@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/stores/useUIStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { FinanceDashboard } from './FinanceDashboard'
@@ -9,15 +10,16 @@ import { RelationshipsDashboard } from './RelationshipsDashboard'
 import { ProductivityDashboard } from './ProductivityDashboard'
 
 export function DashboardsScreen() {
+  const { t } = useTranslation()
   const { activeDashboard, setActiveDashboard, openPaywall } = useUIStore()
   const { profile } = useProfileStore()
   const isPremium = profile.isPremium
 
   const tabs = [
-    { id: 'finance' as const, label: 'Finance', emoji: '💰', premium: false },
-    { id: 'body' as const, label: 'Body', emoji: '💪', premium: true },
-    { id: 'relationships' as const, label: 'Relations', emoji: '👥', premium: true },
-    { id: 'productivity' as const, label: 'Work', emoji: '⚡', premium: true },
+    { id: 'finance' as const, label: t('dashboards.finance'), emoji: '💰', premium: false },
+    { id: 'body' as const, label: t('dashboards.body'), emoji: '💪', premium: true },
+    { id: 'relationships' as const, label: t('dashboards.relations'), emoji: '👥', premium: true },
+    { id: 'productivity' as const, label: t('dashboards.work'), emoji: '⚡', premium: true },
   ]
 
   const activeTab = tabs.find((t) => t.id === activeDashboard) || tabs[0]
@@ -26,7 +28,7 @@ export function DashboardsScreen() {
     <div className="flex flex-col min-h-full bg-bg-base text-text-primary pb-24">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-bg-base pt-6 px-4 pb-2 border-b border-border">
-        <h2 className="font-heading font-bold text-2xl mb-4">Dashboards</h2>
+        <h2 className="font-heading font-bold text-2xl mb-4">{t('dashboards.title')}</h2>
         
         {/* Navigation Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>

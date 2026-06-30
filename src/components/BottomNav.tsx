@@ -1,50 +1,18 @@
 import { Home, Plus, BarChart2, LayoutDashboard, Sparkles, User } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/stores/useUIStore'
 import { useChatStore } from '@/stores/useChatStore'
 import { cn } from '@/lib/utils'
 import type { TabId } from '@/types'
 
-interface NavTab {
-  id: TabId
-  label: string
-  icon: React.ReactNode
-}
-
 export function BottomNav() {
+  const { t } = useTranslation()
   const { activeTab, setActiveTab, openEntrySheet } = useUIStore()
   const { insights } = useChatStore()
 
-  const tabs: NavTab[] = [
-    {
-      id: 'home',
-      label: 'Home',
-      icon: <Home size={22} />,
-    },
-    {
-      id: 'stats',
-      label: 'Stats',
-      icon: <BarChart2 size={22} />,
-    },
-    {
-      id: 'dashboards',
-      label: 'Data',
-      icon: <LayoutDashboard size={22} />,
-    },
-    {
-      id: 'insights',
-      label: 'PA',
-      icon: <Sparkles size={22} />,
-    },
-    {
-      id: 'profile',
-      label: 'Me',
-      icon: <User size={22} />,
-    },
-  ]
-
   const handleTabPress = (id: TabId) => {
-    if (id === 'log') return // handled separately
+    if (id === 'log') return
     setActiveTab(id)
   }
 
@@ -55,7 +23,7 @@ export function BottomNav() {
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-30 bg-bg-surface border-t border-border"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="grid grid-cols-6 h-[72px]">
+      <div className="grid grid-cols-6 h-[64px]">
         {/* Home */}
         <motion.button
           whileTap={{ scale: 0.92 }}
@@ -64,15 +32,10 @@ export function BottomNav() {
           aria-label="Home"
         >
           <span className={cn(isActive('home') ? 'text-accent-red' : 'text-[#444444]')}>
-            <Home size={22} />
+            <Home size={20} />
           </span>
-          <span
-            className={cn(
-              'text-[9px] font-heading uppercase tracking-wider',
-              isActive('home') ? 'text-accent-red' : 'text-[#444444]'
-            )}
-          >
-            Home
+          <span className={cn('text-[9px] font-heading uppercase tracking-wider', isActive('home') ? 'text-accent-red' : 'text-[#444444]')}>
+            {t('bottomNav.home')}
           </span>
         </motion.button>
 
@@ -84,15 +47,10 @@ export function BottomNav() {
           aria-label="Stats"
         >
           <span className={cn(isActive('stats') ? 'text-accent-red' : 'text-[#444444]')}>
-            <BarChart2 size={22} />
+            <BarChart2 size={20} />
           </span>
-          <span
-            className={cn(
-              'text-[9px] font-heading uppercase tracking-wider',
-              isActive('stats') ? 'text-accent-red' : 'text-[#444444]'
-            )}
-          >
-            Stats
+          <span className={cn('text-[9px] font-heading uppercase tracking-wider', isActive('stats') ? 'text-accent-red' : 'text-[#444444]')}>
+            {t('bottomNav.stats')}
           </span>
         </motion.button>
 
@@ -101,7 +59,6 @@ export function BottomNav() {
           whileTap={{ scale: 0.88 }}
           onClick={() => {
             setActiveTab('log')
-            // Default to opening substances, can be changed by home screen
             openEntrySheet('fitness')
           }}
           className="flex flex-col items-center justify-center cursor-pointer"
@@ -120,15 +77,10 @@ export function BottomNav() {
           aria-label="Dashboards"
         >
           <span className={cn(isActive('dashboards') ? 'text-accent-red' : 'text-[#444444]')}>
-            <LayoutDashboard size={22} />
+            <LayoutDashboard size={20} />
           </span>
-          <span
-            className={cn(
-              'text-[9px] font-heading uppercase tracking-wider',
-              isActive('dashboards') ? 'text-accent-red' : 'text-[#444444]'
-            )}
-          >
-            Data
+          <span className={cn('text-[9px] font-heading uppercase tracking-wider', isActive('dashboards') ? 'text-accent-red' : 'text-[#444444]')}>
+            {t('bottomNav.data')}
           </span>
         </motion.button>
 
@@ -140,18 +92,13 @@ export function BottomNav() {
           aria-label="Insights"
         >
           <span className={cn('relative', isActive('insights') ? 'text-accent-red' : 'text-[#444444]')}>
-            <Sparkles size={22} />
+            <Sparkles size={20} />
             {insights.length > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent-red block" />
             )}
           </span>
-          <span
-            className={cn(
-              'text-[9px] font-heading uppercase tracking-wider',
-              isActive('insights') ? 'text-accent-red' : 'text-[#444444]'
-            )}
-          >
-            PA
+          <span className={cn('text-[9px] font-heading uppercase tracking-wider', isActive('insights') ? 'text-accent-red' : 'text-[#444444]')}>
+            {t('bottomNav.pa')}
           </span>
         </motion.button>
 
@@ -163,15 +110,10 @@ export function BottomNav() {
           aria-label="Profile"
         >
           <span className={cn(isActive('profile') ? 'text-accent-red' : 'text-[#444444]')}>
-            <User size={22} />
+            <User size={20} />
           </span>
-          <span
-            className={cn(
-              'text-[9px] font-heading uppercase tracking-wider',
-              isActive('profile') ? 'text-accent-red' : 'text-[#444444]'
-            )}
-          >
-            Me
+          <span className={cn('text-[9px] font-heading uppercase tracking-wider', isActive('profile') ? 'text-accent-red' : 'text-[#444444]')}>
+            {t('bottomNav.me')}
           </span>
         </motion.button>
       </div>
