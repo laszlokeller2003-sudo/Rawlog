@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { SleepFields } from '@/types'
-import { RatingSlider } from '@/components/RatingSlider'
+import { GaugeInput } from '@/components/GaugeInput'
+import { PillSelector } from '@/components/PillSelector'
+import { Input } from '@/components/Input'
 import { useProfileStore } from '@/stores/useProfileStore'
 
 interface SleepFormProps {
@@ -8,105 +10,150 @@ interface SleepFormProps {
   onChange: (f: SleepFields) => void
 }
 
+const SLEEP_AIDS = ['Keins', 'Melatonin', 'Magnesium', 'CBD', 'Alkohol', 'Schlaftabletten', 'Kräutertee']
+const ENVIRONMENTS = ['Zuhause', 'Hotel', 'Sofa', 'Draußen', 'Freunde', 'Unterwegs']
+
+function calcDuration(bedtime?: string, waketime?: string): number | undefined {
+  if (!bedtime || !waketime) return undefined
+  const [bh, bm] = bedtime.split(':').map(Number)
+  const [wh, wm] = waketime.split(':').map(Number)
+  let mins = (wh * 60 + wm) - (bh * 60 + bm)
+  if (mins <= 0) mins += 24 * 60 // crossed midnight
+  return mins
+}
+
 export function SleepForm({ fields, onChange }: SleepFormProps) {
   const [showMore, setShowMore] = useState(false)
   const { profile } = useProfileStore()
 
-  const totalMinutes = fields.duration ?? 0
-  const hours = Math.floor(totalMinutes / 60)
-  const mins = totalMinutes % 60
+  // Auto-calc duration when bedtime or waketime changes
+  useEffect(() => {
+    const auto = calcDuration(fields.bedtime, fields.waketime)
+    if (auto !== undefined && auto !== fields.duration) {
+      onChange({ ...fields, duration: auto })
+    }
+  }, [fields.bedtime, fields.waketime])
 
-  const handleHoursChange = (val: string) => {
-    const h = parseInt(val) || 0
-    onChange({ ...fields, duration: h * 60 + mins })
-  }
-
-  const handleMinsChange = (val: string) => {
-    const m = parseInt(val) || 0
-    onChange({ ...fields, duration: hours * 60 + Math.min(59, m) })
-  }
+  const hours = Math.floor((fields.duration ?? 0) / 60)
+  const mins = (fields.duration ?? 0) % 60
 
   return (
     <div className="space-y-4">
-      {/* Quick: Duration (hours + minutes) */}
-      <div>
-        <label className="input-label">Duration</label>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <input
-              className="input-field"
-              type="number"
-              min="0"
-              max="24"
-              step="1"
-              value={hours || ''}
-              onChange={(e) => handleHoursChange(e.target.value)}
-              placeholder="0"
-              style={{ borderRadius: 0 }}
-            />
-            <div className="text-[10px] uppercase tracking-widest mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>
-              Hours
-            </div>
-          </div>
-          <div className="flex-1">
-            <input
-              className="input-field"
-              type="number"
-              min="0"
-              max="59"
-              step="1"
-              value={mins || ''}
-              onChange={(e) => handleMinsChange(e.target.value)}
-              placeholder="0"
-              style={{ borderRadius: 0 }}
-            />
-            <div className="text-[10px] uppercase tracking-widest mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>
-              Minutes
-            </div>
-          </div>
+      {/* Bedtime + Waketime */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="input-label">Einschlafen</label>
+          <input
+            className="input-field"
+            type="time"
+            value={fields.bedtime ?? ''}
+            onChange={(e) => onChange({ ...fields, bedtime: e.target.value || undefined })}
+            style={{ borderRadius: 0, colorScheme: 'dark' }}
+          />
+        </div>
+        <div>
+          <label className="input-label">Aufwachen</label>
+          <input
+            className="input-field"
+            type="time"
+            value={fields.waketime ?? ''}
+            onChange={(e) => onChange({ ...fields, waketime: e.target.value || undefined })}
+            style={{ borderRadius: 0, colorScheme: 'dark' }}
+          />
         </div>
       </div>
 
-      {/* Quick: Quality */}
-      <RatingSlider
-        label="Quality"
+      {/* Auto-calculated duration (or manual) */}
+      {fields.duration !== undefined && (
+        <div className="text-center py-1">
+          <span className="font-mono text-lg font-bold" style={{ color: '#3B82F6' }}>
+            {hours}h {mins}m
+          </span>
+          <span className="text-xs ml-2" style={{ color: '#444444' }}>Schlafdauer</span>
+        </div>
+      )}
+
+      {/* Quality gauge */}
+      <GaugeInput
+        label="Schlafqualität"
         value={fields.quality ?? 0}
         onChange={(v) => onChange({ ...fields, quality: v })}
         personalGoal={profile.sleepQualityGoal}
+        color="#3B82F6"
       />
 
-      {/* Expand toggle */}
       <button
         type="button"
         className="btn-ghost text-xs w-full flex items-center justify-center gap-1"
         onClick={() => setShowMore(!showMore)}
       >
         <span>{showMore ? '▲' : '▼'}</span>
-        <span>{showMore ? 'Less details' : 'More details'}</span>
+        <span>{showMore ? 'Weniger' : 'Mehr Details'}</span>
       </button>
 
       {showMore && (
         <>
           <div className="divider" />
-          <div className="flex items-center justify-between py-2">
-            <span className="input-label mb-0">Had dreams</span>
+
+          {/* Times woken */}
+          <div>
+            <label className="input-label">Mal aufgewacht</label>
+            <input
+              className="input-field"
+              type="number"
+              min="0"
+              step="1"
+              value={fields.timesWoken ?? ''}
+              onChange={(e) => onChange({ ...fields, timesWoken: parseInt(e.target.value) || undefined })}
+              placeholder="0"
+              style={{ borderRadius: 0 }}
+            />
+          </div>
+
+          {/* Dream toggle + text */}
+          <div className="flex items-center justify-between py-1">
+            <span className="input-label mb-0">Geträumt</span>
             <button
               type="button"
-              onClick={() => onChange({ ...fields, dreams: !fields.dreams })}
+              onClick={() => onChange({ ...fields, dreams: !fields.dreams, dreamText: fields.dreams ? undefined : fields.dreamText })}
               className="relative w-12 h-6 rounded-full transition-colors duration-200"
-              style={{
-                background: fields.dreams ? 'var(--accent-red)' : 'var(--border)',
-              }}
+              style={{ background: fields.dreams ? 'var(--accent-red)' : 'var(--border)' }}
               role="switch"
               aria-checked={fields.dreams}
             >
               <span
                 className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform duration-200"
-                style={{
-                  transform: fields.dreams ? 'translateX(26px)' : 'translateX(2px)',
-                }}
+                style={{ transform: fields.dreams ? 'translateX(26px)' : 'translateX(2px)' }}
               />
             </button>
+          </div>
+          {fields.dreams && (
+            <Input
+              label="Traum-Notiz"
+              value={fields.dreamText ?? ''}
+              onChange={(v) => onChange({ ...fields, dreamText: v || undefined })}
+              placeholder="Was hast du geträumt?"
+            />
+          )}
+
+          {/* Sleep aid */}
+          <div>
+            <label className="input-label">Einschlafhilfe</label>
+            <PillSelector
+              options={SLEEP_AIDS}
+              value={fields.sleepAid ?? ''}
+              onChange={(v) => onChange({ ...fields, sleepAid: v as string })}
+            />
+          </div>
+
+          {/* Environment */}
+          <div>
+            <label className="input-label">Umgebung</label>
+            <PillSelector
+              options={ENVIRONMENTS}
+              value={fields.environment ?? ''}
+              onChange={(v) => onChange({ ...fields, environment: v as string })}
+            />
           </div>
         </>
       )}
