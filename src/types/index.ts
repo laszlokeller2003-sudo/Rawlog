@@ -65,8 +65,10 @@ export interface SubstanceFields {
 
 export interface IntimacyFields {
   partner?: string
+  location?: string
   rating?: number
   duration?: number // minutes
+  protection?: boolean
 }
 
 export interface FitnessFields {
@@ -99,9 +101,12 @@ export type MoodTrigger =
   | 'other'
 
 export interface NutritionFields {
-  quality?: number
-  calories?: number
+  mealName?: string
+  size?: 'Snack' | 'Klein' | 'Normal' | 'Groß' | 'Cheat'
+  quality?: number // healthy gauge
   water?: number // ml
+  fastFood?: boolean
+  calories?: number
 }
 
 export interface FinanceFields {
@@ -134,8 +139,11 @@ export interface WorkFields {
 }
 
 export interface HealthFields {
+  symptom?: string
   severity?: number
   bodyPart?: string
+  medication?: string
+  energy?: number
 }
 
 export type EntryFields =

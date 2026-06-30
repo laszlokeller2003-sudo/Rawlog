@@ -4,16 +4,24 @@ import { RatingSlider } from '@/components/RatingSlider'
 import { Input } from '@/components/Input'
 
 interface IntimacyFormProps {
+  subcategory?: string
   fields: IntimacyFields
   onChange: (f: IntimacyFields) => void
 }
 
-export function IntimacyForm({ fields, onChange }: IntimacyFormProps) {
+export function IntimacyForm({ subcategory, fields, onChange }: IntimacyFormProps) {
   const [showMore, setShowMore] = useState(false)
 
   return (
     <div className="space-y-4">
-      {/* Quick: Rating */}
+      {/* Quick Inputs */}
+      <Input
+        label="Partner / Initials"
+        value={fields.partner ?? ''}
+        onChange={(v) => onChange({ ...fields, partner: v || undefined })}
+        placeholder="Name or alias..."
+      />
+
       <RatingSlider
         label="Rating"
         value={fields.rating ?? 0}
@@ -34,11 +42,12 @@ export function IntimacyForm({ fields, onChange }: IntimacyFormProps) {
         <>
           <div className="divider" />
           <Input
-            label="Partner (optional)"
-            value={fields.partner ?? ''}
-            onChange={(v) => onChange({ ...fields, partner: v || undefined })}
-            placeholder="Name or alias..."
+            label="Location (optional)"
+            value={fields.location ?? ''}
+            onChange={(v) => onChange({ ...fields, location: v || undefined })}
+            placeholder="e.g. Home, Hotel..."
           />
+          
           <div>
             <label className="input-label">Duration (minutes)</label>
             <input
@@ -52,6 +61,19 @@ export function IntimacyForm({ fields, onChange }: IntimacyFormProps) {
               style={{ borderRadius: 0 }}
             />
           </div>
+
+          {subcategory === 'Sex' && (
+            <div>
+              <label className="flex items-center gap-2 text-sm text-text-primary">
+                <input
+                  type="checkbox"
+                  checked={fields.protection ?? false}
+                  onChange={(e) => onChange({ ...fields, protection: e.target.checked })}
+                />
+                Protection used
+              </label>
+            </div>
+          )}
         </>
       )}
     </div>

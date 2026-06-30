@@ -13,7 +13,14 @@ export function HealthForm({ fields, onChange }: HealthFormProps) {
 
   return (
     <div className="space-y-4">
-      {/* Quick: Severity */}
+      {/* Quick Inputs */}
+      <Input
+        label="Symptom / Condition"
+        value={fields.symptom ?? ''}
+        onChange={(v) => onChange({ ...fields, symptom: v || undefined })}
+        placeholder="e.g. Headache, Cough"
+      />
+
       <RatingSlider
         label="Severity"
         value={fields.severity ?? 0}
@@ -33,11 +40,25 @@ export function HealthForm({ fields, onChange }: HealthFormProps) {
       {showMore && (
         <>
           <div className="divider" />
+          
           <Input
-            label="Body part"
+            label="Body part (optional)"
             value={fields.bodyPart ?? ''}
             onChange={(v) => onChange({ ...fields, bodyPart: v || undefined })}
-            placeholder="e.g. head, back, knee"
+            placeholder="e.g. Kopf, Bauch, Rücken"
+          />
+
+          <Input
+            label="Medication taken (optional)"
+            value={fields.medication ?? ''}
+            onChange={(v) => onChange({ ...fields, medication: v || undefined })}
+            placeholder="e.g. 400mg Ibu"
+          />
+
+          <RatingSlider
+            label="Energy level"
+            value={fields.energy ?? 0}
+            onChange={(v) => onChange({ ...fields, energy: v })}
           />
         </>
       )}

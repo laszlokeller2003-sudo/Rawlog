@@ -90,6 +90,7 @@ function CategoryForm({
     case 'intimacy':
       return (
         <IntimacyForm
+          subcategory={subcategory}
           fields={fields as IntimacyFields}
           onChange={(f) => onChange(f)}
         />
