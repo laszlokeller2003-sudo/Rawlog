@@ -4,7 +4,6 @@ import { useEntriesStore } from './useEntriesStore'
 import { useGoalsStore } from './useGoalsStore'
 import { useProfileStore } from './useProfileStore'
 import type { CategoryId, Entry, Goal } from '@/types'
-import { toDateString } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 
 export interface CategoryScoreDetail {
@@ -16,7 +15,7 @@ export interface CategoryScoreDetail {
 export interface ScoreHistoryItem {
   id: string
   user_id: string
-  date: string // YYYY-MM-DD
+  date: string
   overall_score: number | null
   category_scores: Record<string, number | null>
 }
@@ -34,14 +33,13 @@ interface ScoreState {
   clearAll: () => void
 }
 
-// ─── Helper: Date Boundaries ───────────────────────────────────────────────────
+// ─── Date Helpers ─────────────────────────────────────────────────────────────
 
 function getDateBoundaries(dateStr: string) {
   const target = new Date(dateStr)
-
-  // Current Week (Monday to Sunday)
   const day = target.getDay()
   const diffToMonday = day === 0 ? -6 : 1 - day
+
   const monday = new Date(target)
   monday.setDate(target.getDate() + diffToMonday)
   monday.setHours(0, 0, 0, 0)
@@ -50,18 +48,14 @@ function getDateBoundaries(dateStr: string) {
   sunday.setDate(monday.getDate() + 6)
   sunday.setHours(23, 59, 59, 999)
 
-  // Last Week
   const lastMonday = new Date(monday)
   lastMonday.setDate(monday.getDate() - 7)
   const lastSunday = new Date(lastMonday)
   lastSunday.setDate(lastMonday.getDate() + 6)
   lastSunday.setHours(23, 59, 59, 999)
 
-  // Current Month
   const firstOfMonth = new Date(target.getFullYear(), target.getMonth(), 1)
   const lastOfMonth = new Date(target.getFullYear(), target.getMonth() + 1, 0, 23, 59, 59, 999)
-
-  // Last Month
   const firstOfLastMonth = new Date(target.getFullYear(), target.getMonth() - 1, 1)
   const lastOfLastMonth = new Date(target.getFullYear(), target.getMonth(), 0, 23, 59, 59, 999)
 
@@ -77,162 +71,124 @@ function getDateBoundaries(dateStr: string) {
   }
 }
 
-// ─── Helper: Days Between ──────────────────────────────────────────────────────
-
 function getDaysBetween(d1: string, d2: string): number {
-  const timeDiff = new Date(d1).getTime() - new Date(d2).getTime()
-  return Math.floor(timeDiff / (1000 * 60 * 60 * 24))
+  return Math.floor((new Date(d1).getTime() - new Date(d2).getTime()) / (1000 * 60 * 60 * 24))
 }
 
-// ─── Raw Category Calculations ──────────────────────────────────────────────────
-
-function calculateFitnessScoreRaw(dateStr: string, entries: Entry[], goals: Goal[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const weekEntries = entries.filter(
-    (e) => e.category === 'fitness' && e.timestamp.split('T')[0] >= bounds.monday && e.timestamp.split('T')[0] <= dateStr
+function weekEntries(entries: Entry[], category: CategoryId, dateStr: string) {
+  const b = getDateBoundaries(dateStr)
+  return entries.filter(
+    (e) => e.category === category && e.timestamp.split('T')[0] >= b.monday && e.timestamp.split('T')[0] <= dateStr
   )
+}
 
-  // 1. Sessions vs Weekly Goal (default 3)
-  const activeFitnessGoal = goals.find((g) => g.category === 'fitness' && !g.achieved)
-  const target = activeFitnessGoal?.targetValue ?? 3
-  const sessions = weekEntries.length
-  const f1 = Math.min(1, sessions / target) * 40
+function lastWeekEntries(entries: Entry[], category: CategoryId, dateStr: string) {
+  const b = getDateBoundaries(dateStr)
+  return entries.filter(
+    (e) => e.category === category && e.timestamp.split('T')[0] >= b.lastMonday && e.timestamp.split('T')[0] <= b.lastSunday
+  )
+}
 
-  // 2. Average Intensity this week (25%)
-  const intensities = weekEntries
-    .map((e) => (e.fields as any).intensity)
-    .filter((v) => typeof v === 'number')
-  const avgIntensity = intensities.length > 0 ? intensities.reduce((a, b) => a + b, 0) / intensities.length : 0
-  const f2 = (avgIntensity / 10) * 25
+function avg(values: number[]): number {
+  return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
+}
 
-  // 3. Current Streak (20%) - consecutive workout days ending on or before dateStr
+// ─── Category Score Formulas ──────────────────────────────────────────────────
+
+function calculateFitnessScore(dateStr: string, entries: Entry[], goals: Goal[]): number {
+  const week = weekEntries(entries, 'fitness', dateStr)
+  const lastWeek = lastWeekEntries(entries, 'fitness', dateStr)
+
+  const target = goals.find((g) => g.category === 'fitness' && !g.achieved)?.targetValue ?? 3
+  const f1 = Math.min(1, week.length / target) * 40
+
+  const intensities = week.map((e) => (e.fields as any).intensity).filter((v) => typeof v === 'number')
+  const f2 = (avg(intensities) / 10) * 25
+
   let streak = 0
-  let checkDate = new Date(dateStr)
+  const checkDate = new Date(dateStr)
   for (let i = 0; i < 7; i++) {
-    const checkDateStr = checkDate.toISOString().split('T')[0]
-    const hasWorkout = entries.some(
-      (e) => e.category === 'fitness' && e.timestamp.startsWith(checkDateStr)
-    )
-    if (hasWorkout) {
+    const ds = checkDate.toISOString().split('T')[0]
+    if (entries.some((e) => e.category === 'fitness' && e.timestamp.startsWith(ds))) {
       streak++
       checkDate.setDate(checkDate.getDate() - 1)
-    } else {
-      break
-    }
+    } else break
   }
   const f3 = Math.min(1, streak / 7) * 20
 
-  // 4. Trend vs last week (15%)
-  const lastWeekEntries = entries.filter(
-    (e) => e.category === 'fitness' && e.timestamp.split('T')[0] >= bounds.lastMonday && e.timestamp.split('T')[0] <= bounds.lastSunday
-  )
-  const lastSessions = lastWeekEntries.length
-  const f4 = sessions >= lastSessions ? 15 : (sessions / Math.max(1, lastSessions)) * 15
+  const f4 = week.length >= lastWeek.length ? 15 : (week.length / Math.max(1, lastWeek.length)) * 15
 
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateSleepScoreRaw(dateStr: string, entries: Entry[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const weekEntries = entries.filter(
-    (e) => e.category === 'sleep' && e.timestamp.split('T')[0] >= bounds.monday && e.timestamp.split('T')[0] <= dateStr
-  )
+function calculateSleepScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'sleep', dateStr)
+  if (week.length === 0) return 75
 
-  if (weekEntries.length === 0) {
-    // If no sleep entries this week, return default base sleep score
-    return 75
-  }
-
-  // 1. Average hours vs 7.5h target (35%)
-  const durations = weekEntries
-    .map((e) => (e.fields as any).duration)
-    .filter((v) => typeof v === 'number') // duration in minutes
-  const avgHours = durations.length > 0 ? (durations.reduce((a, b) => a + b, 0) / durations.length) / 60 : 7.5
+  const durations = week.map((e) => (e.fields as any).duration).filter((v) => typeof v === 'number')
+  const avgHours = durations.length > 0 ? avg(durations) / 60 : 7.5
   const f1 = Math.min(1, avgHours / 7.5) * 35
 
-  // 2. Average quality (35%)
-  const qualities = weekEntries
-    .map((e) => (e.fields as any).quality)
-    .filter((v) => typeof v === 'number')
-  const avgQuality = qualities.length > 0 ? qualities.reduce((a, b) => a + b, 0) / qualities.length : 7.5
-  const f2 = (avgQuality / 10) * 35
+  const qualities = week.map((e) => (e.fields as any).quality).filter((v) => typeof v === 'number')
+  const f2 = (avg(qualities) / 10) * 35
 
-  // 3. Bedtime consistency ±1h (20%)
   let f3 = 20
-  if (weekEntries.length > 1) {
-    // Get hour of sleep entries (0-23)
-    const hours = weekEntries.map((e) => new Date(e.timestamp).getHours())
-    const avgH = hours.reduce((a, b) => a + b, 0) / hours.length
-    // Calculate mean deviation handling wrap-around
-    const deviations = hours.map((h) => Math.min(Math.abs(h - avgH), 24 - Math.abs(h - avgH)))
-    const avgDev = deviations.reduce((a, b) => a + b, 0) / deviations.length
+  if (week.length > 1) {
+    const hours = week.map((e) => new Date(e.timestamp).getHours())
+    const meanH = avg(hours)
+    const deviations = hours.map((h) => Math.min(Math.abs(h - meanH), 24 - Math.abs(h - meanH)))
+    const avgDev = avg(deviations)
     if (avgDev <= 1) f3 = 20
     else if (avgDev <= 2) f3 = 10
     else f3 = 0
   }
 
-  // 4. Trend vs last week (10%)
-  const lastWeekEntries = entries.filter(
-    (e) => e.category === 'sleep' && e.timestamp.split('T')[0] >= bounds.lastMonday && e.timestamp.split('T')[0] <= bounds.lastSunday
-  )
-  const lastDurations = lastWeekEntries
-    .map((e) => (e.fields as any).duration)
-    .filter((v) => typeof v === 'number')
-  const lastAvgHours = lastDurations.length > 0 ? (lastDurations.reduce((a, b) => a + b, 0) / lastDurations.length) / 60 : 7.5
+  const lastWeek = lastWeekEntries(entries, 'sleep', dateStr)
+  const lastDurations = lastWeek.map((e) => (e.fields as any).duration).filter((v) => typeof v === 'number')
+  const lastAvgHours = lastDurations.length > 0 ? avg(lastDurations) / 60 : 7.5
   const f4 = avgHours >= lastAvgHours ? 10 : (avgHours / Math.max(0.1, lastAvgHours)) * 10
 
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateFinanceScoreRaw(dateStr: string, entries: Entry[], goals: Goal[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const monthEntries = entries.filter(
-    (e) => e.category === 'finance' && e.timestamp.split('T')[0] >= bounds.firstOfMonth && e.timestamp.split('T')[0] <= dateStr
+function calculateFinanceScore(dateStr: string, entries: Entry[], goals: Goal[]): number {
+  const b = getDateBoundaries(dateStr)
+  const month = entries.filter(
+    (e) => e.category === 'finance' && e.timestamp.split('T')[0] >= b.firstOfMonth && e.timestamp.split('T')[0] <= dateStr
   )
 
-  // 1. Savings Rate target >20% (40%)
-  let income = 0
-  let expenses = 0
-  let impulse = 0
-  monthEntries.forEach((e) => {
+  let income = 0, expenses = 0, impulse = 0
+  month.forEach((e) => {
     const amt = (e.fields as any).amount || 0
-    if (e.subcategory === 'Income') {
+    if (e.subcategory === 'Einnahme') {
       income += amt
-    } else if (['Expense', 'Impulse buy', 'Subscription'].includes(e.subcategory)) {
+    } else if (['Ausgabe', 'Schulden'].includes(e.subcategory)) {
       expenses += amt
-      if (e.subcategory === 'Impulse buy') {
-        impulse += amt
-      }
+      if ((e.fields as any).impulseBuy === true) impulse += amt
     }
   })
-  const savingsRate = income > 0 ? (income - expenses) / income : 0
-  const f1 = savingsRate >= 0.20 ? 40 : savingsRate > 0 ? (savingsRate / 0.20) * 40 : 0
 
-  // 2. Goals on Track (30%)
-  const activeFinanceGoals = goals.filter((g) => g.category === 'finance' && !g.achieved)
+  const savingsRate = income > 0 ? (income - expenses) / income : 0
+  const f1 = savingsRate >= 0.2 ? 40 : savingsRate > 0 ? (savingsRate / 0.2) * 40 : 0
+
+  const activeGoals = goals.filter((g) => g.category === 'finance' && !g.achieved)
   let f2 = 30
-  if (activeFinanceGoals.length > 0) {
-    const onTrackGoals = activeFinanceGoals.filter((g) => {
-      if (!g.deadline) return true
-      return new Date(g.deadline) >= new Date(dateStr)
-    })
-    f2 = (onTrackGoals.length / activeFinanceGoals.length) * 30
+  if (activeGoals.length > 0) {
+    const onTrack = activeGoals.filter((g) => !g.deadline || new Date(g.deadline) >= new Date(dateStr))
+    f2 = (onTrack.length / activeGoals.length) * 30
   }
 
-  // 3. Impulse buys vs total expenses (20%) - lower is better
   const impulseRatio = expenses > 0 ? impulse / expenses : 0
   const f3 = (1 - impulseRatio) * 20
 
-  // 4. Trend vs last month (10%)
-  const lastMonthEntries = entries.filter(
-    (e) => e.category === 'finance' && e.timestamp.split('T')[0] >= bounds.firstOfLastMonth && e.timestamp.split('T')[0] <= bounds.lastOfLastMonth
+  const lastMonth = entries.filter(
+    (e) => e.category === 'finance' && e.timestamp.split('T')[0] >= b.firstOfLastMonth && e.timestamp.split('T')[0] <= b.lastOfLastMonth
   )
-  let lastIncome = 0
-  let lastExpenses = 0
-  lastMonthEntries.forEach((e) => {
+  let lastIncome = 0, lastExpenses = 0
+  lastMonth.forEach((e) => {
     const amt = (e.fields as any).amount || 0
-    if (e.subcategory === 'Income') lastIncome += amt
-    else if (['Expense', 'Impulse buy', 'Subscription'].includes(e.subcategory)) lastExpenses += amt
+    if (e.subcategory === 'Einnahme') lastIncome += amt
+    else if (['Ausgabe', 'Schulden'].includes(e.subcategory)) lastExpenses += amt
   })
   const lastSavingsRate = lastIncome > 0 ? (lastIncome - lastExpenses) / lastIncome : 0
   const f4 = savingsRate >= lastSavingsRate ? 10 : 0
@@ -240,141 +196,93 @@ function calculateFinanceScoreRaw(dateStr: string, entries: Entry[], goals: Goal
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateSocialScoreRaw(dateStr: string, entries: Entry[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const weekEntries = entries.filter(
-    (e) => e.category === 'social' && e.timestamp.split('T')[0] >= bounds.monday && e.timestamp.split('T')[0] <= dateStr
-  )
+function calculateSocialScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'social', dateStr)
 
-  const socialSubcategories = ['Friends', 'Family', 'Partner', 'Party', 'Event', 'Networking', 'Online call']
-  const socialEvents = weekEntries.filter((e) => socialSubcategories.includes(e.subcategory)).length
-  const aloneTime = weekEntries.filter((e) => e.subcategory === 'Alone time').length
-
-  // 1. Balance social events vs alone time (35%)
-  const totalSocial = socialEvents + aloneTime
-  const ratio = totalSocial > 0 ? socialEvents / totalSocial : 0.5
+  const SOCIAL_SUBS = ['Freunde', 'Familie', 'Partner', 'Party', 'Event', 'Networking', 'Online']
+  const socialCount = week.filter((e) => SOCIAL_SUBS.includes(e.subcategory)).length
+  const aloneCount = week.filter((e) => e.subcategory === 'Allein').length
+  const total = socialCount + aloneCount
+  const ratio = total > 0 ? socialCount / total : 0.5
   const f1 = ratio >= 0.3 && ratio <= 0.7 ? 35 : Math.max(0, 35 - Math.abs(ratio - 0.5) * 70)
 
-  // 2. Average energy after (35%)
-  const energyMapping: Record<string, number> = { drained: 1, neutral: 5, energized: 10 }
-  const energyValues = weekEntries
+  const energyMap: Record<string, number> = { drained: 1, neutral: 5, energized: 10 }
+  const energyVals = week
     .map((e) => (e.fields as any).energyAfter)
     .filter(Boolean)
-    .map((v) => energyMapping[v] ?? 5)
-  const avgEnergy = energyValues.length > 0 ? energyValues.reduce((a, b) => a + b, 0) / energyValues.length : 7.5
-  const f2 = (avgEnergy / 10) * 35
+    .map((v) => energyMap[v] ?? 5)
+  const f2 = (avg(energyVals) / 10) * 35 || 17.5
 
-  // 3. Average quality rating (20%)
-  const qualities = weekEntries
-    .map((e) => (e.fields as any).quality)
-    .filter((v) => typeof v === 'number')
-  const avgQuality = qualities.length > 0 ? qualities.reduce((a, b) => a + b, 0) / qualities.length : 7.5
-  const f3 = (avgQuality / 10) * 20
+  const qualities = week.map((e) => (e.fields as any).quality).filter((v) => typeof v === 'number')
+  const f3 = (avg(qualities) / 10) * 20 || 10
 
-  // 4. Trend vs last week (10%)
-  const lastWeekEntries = entries.filter(
-    (e) => e.category === 'social' && e.timestamp.split('T')[0] >= bounds.lastMonday && e.timestamp.split('T')[0] <= bounds.lastSunday
-  )
-  const f4 = weekEntries.length >= lastWeekEntries.length ? 10 : 5
+  const lastWeek = lastWeekEntries(entries, 'social', dateStr)
+  const f4 = week.length >= lastWeek.length ? 10 : 5
 
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateWorkScoreRaw(dateStr: string, entries: Entry[], goals: Goal[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const weekEntries = entries.filter(
-    (e) => e.category === 'work' && e.timestamp.split('T')[0] >= bounds.monday && e.timestamp.split('T')[0] <= dateStr
-  )
+function calculateWorkScore(dateStr: string, entries: Entry[], goals: Goal[]): number {
+  const week = weekEntries(entries, 'work', dateStr)
+  const lastWeek = lastWeekEntries(entries, 'work', dateStr)
 
-  // 1. Deep work hours vs weekly goal (default 20h) (40%)
-  const activeWorkGoal = goals.find((g) => g.category === 'work' && !g.achieved)
-  const goalHours = activeWorkGoal?.targetValue ?? 20
-  const deepWorkMinutes = weekEntries
-    .filter((e) => e.subcategory === 'Deep Work')
+  const goalHours = goals.find((g) => g.category === 'work' && !g.achieved)?.targetValue ?? 20
+  const deepWorkMins = week
+    .filter((e) => ['Deep Work', e.subcategory].includes('Deep Work') && (e.fields as any).sessionType === 'Deep Work' || e.subcategory === 'Deep Work')
     .reduce((sum, e) => sum + ((e.fields as any).duration || 0), 0)
-  const deepWorkHours = deepWorkMinutes / 60
-  const f1 = Math.min(1, deepWorkHours / goalHours) * 40
+  const f1 = Math.min(1, deepWorkMins / 60 / goalHours) * 40
 
-  // 2. Average focus score (30%)
-  const focusScores = weekEntries
-    .map((e) => (e.fields as any).focusScore)
-    .filter((v) => typeof v === 'number')
-  const avgFocus = focusScores.length > 0 ? focusScores.reduce((a, b) => a + b, 0) / focusScores.length : 7.5
-  const f2 = (avgFocus / 10) * 30
+  const focusScores = week.map((e) => (e.fields as any).focusScore).filter((v) => typeof v === 'number')
+  const f2 = (avg(focusScores) / 10) * 30 || 15
 
-  // 3. Flow State Sessions (15%) - capped at 3/week
-  const flowStateSessions = weekEntries.filter((e) => e.subcategory === 'Flow State').length
-  const f3 = Math.min(1, flowStateSessions / 3) * 15
+  const flowSessions = week.filter(
+    (e) => e.subcategory === 'Flow State' || (e.fields as any).sessionType === 'Flow State'
+  ).length
+  const f3 = Math.min(1, flowSessions / 3) * 15
 
-  // 4. Trend vs last week (15%)
-  const lastWeekEntries = entries.filter(
-    (e) => e.category === 'work' && e.timestamp.split('T')[0] >= bounds.lastMonday && e.timestamp.split('T')[0] <= bounds.lastSunday
-  )
-  const lastDeepWorkMinutes = lastWeekEntries
-    .filter((e) => e.subcategory === 'Deep Work')
+  const lastDeepMins = lastWeek
+    .filter((e) => e.subcategory === 'Deep Work' || (e.fields as any).sessionType === 'Deep Work')
     .reduce((sum, e) => sum + ((e.fields as any).duration || 0), 0)
-  const lastDeepWorkHours = lastDeepWorkMinutes / 60
-  const f4 = deepWorkHours >= lastDeepWorkHours ? 15 : (deepWorkHours / Math.max(0.1, lastDeepWorkHours)) * 15
+  const f4 = deepWorkMins >= lastDeepMins ? 15 : (deepWorkMins / Math.max(0.1, lastDeepMins)) * 15
 
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateNutritionScoreRaw(dateStr: string, entries: Entry[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const weekEntries = entries.filter(
-    (e) => e.category === 'nutrition' && e.timestamp.split('T')[0] >= bounds.monday && e.timestamp.split('T')[0] <= dateStr
-  )
+function calculateNutritionScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'nutrition', dateStr)
+  const lastWeek = lastWeekEntries(entries, 'nutrition', dateStr)
 
-  // 1. Meals logged vs goal (default 14 meals) (40%)
-  const mealsLogged = weekEntries.filter((e) =>
-    ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Cheat Meal'].includes(e.subcategory)
-  ).length
-  const f1 = Math.min(1, mealsLogged / 14) * 40
+  const meals = week.filter((e) => e.subcategory === 'Mahlzeit').length
+  const f1 = Math.min(1, meals / 14) * 40
 
-  // 2. Average quality rating (35%)
-  const qualities = weekEntries
-    .map((e) => (e.fields as any).quality)
-    .filter((v) => typeof v === 'number')
-  const avgQuality = qualities.length > 0 ? qualities.reduce((a, b) => a + b, 0) / qualities.length : 7.5
-  const f2 = (avgQuality / 10) * 35
+  const qualities = week.map((e) => (e.fields as any).quality).filter((v) => typeof v === 'number')
+  const f2 = (avg(qualities) / 10) * 35 || 17.5
 
-  // 3. Water Intake vs goal (default 2000ml) (15%)
-  const totalWater = weekEntries
-    .map((e) => (e.fields as any).water || 0)
-    .reduce((a, b) => a + b, 0)
-  const avgDailyWater = totalWater / 7
-  const f3 = Math.min(1, avgDailyWater / 2000) * 15
+  const totalWater = week
+    .filter((e) => e.subcategory === 'Wasser')
+    .reduce((sum, e) => sum + ((e.fields as any).amountMl || (e.fields as any).water || 0), 0)
+  const f3 = Math.min(1, totalWater / 7 / 2000) * 15
 
-  // 4. Trend vs last week (10%)
-  const lastWeekEntries = entries.filter(
-    (e) => e.category === 'nutrition' && e.timestamp.split('T')[0] >= bounds.lastMonday && e.timestamp.split('T')[0] <= bounds.lastSunday
-  )
-  const lastMeals = lastWeekEntries.filter((e) =>
-    ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Cheat Meal'].includes(e.subcategory)
-  ).length
-  const f4 = mealsLogged >= lastMeals ? 10 : 5
+  const lastMeals = lastWeek.filter((e) => e.subcategory === 'Mahlzeit').length
+  const f4 = meals >= lastMeals ? 10 : 5
 
   return Math.round(f1 + f2 + f3 + f4)
 }
 
-function calculateHealthScoreRaw(dateStr: string, entries: Entry[]): number {
-  const bounds = getDateBoundaries(dateStr)
-  const weekEntries = entries.filter(
-    (e) => e.category === 'health' && e.timestamp.split('T')[0] >= bounds.monday && e.timestamp.split('T')[0] <= dateStr
-  )
+function calculateHealthScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'health', dateStr)
 
-  // 1. Medication adherence (default 7 doses/week) (40%)
-  const medsCount = weekEntries.filter((e) => ['Medication', 'Supplement'].includes(e.subcategory)).length
+  const medsCount = week.filter((e) => ['Medikament', 'Supplement'].includes(e.subcategory)).length
   const f1 = Math.min(1, medsCount / 7) * 40
 
-  // 2. Energy levels trend (35%)
-  const highs = weekEntries.filter((e) => e.subcategory === 'High energy').length
-  const lows = weekEntries.filter((e) => e.subcategory === 'Low energy').length
-  const ratio = (highs + lows) > 0 ? highs / (highs + lows) : 0.5
-  const f2 = ratio * 35
+  const energyEntries = week.filter((e) => e.subcategory === 'Energie')
+  let f2 = 17.5
+  if (energyEntries.length > 0) {
+    const energyVals = energyEntries.map((e) => (e.fields as any).energy ?? 5).filter((v) => typeof v === 'number')
+    f2 = (avg(energyVals) / 10) * 35
+  }
 
-  // 3. Symptom frequency lower = better (25%)
-  const symptoms = weekEntries.filter((e) => ['Sick', 'Headache', 'Pain'].includes(e.subcategory)).length
+  const symptoms = week.filter((e) => ['Krank', 'Symptom'].includes(e.subcategory)).length
   let f3 = 25
   if (symptoms === 1) f3 = 20
   else if (symptoms === 2) f3 = 15
@@ -385,28 +293,116 @@ function calculateHealthScoreRaw(dateStr: string, entries: Entry[]): number {
   return Math.round(f1 + f2 + f3)
 }
 
-function calculateRawScore(categoryId: CategoryId, dateStr: string, entries: Entry[], goals: Goal[]): number {
-  switch (categoryId) {
-    case 'fitness':
-      return calculateFitnessScoreRaw(dateStr, entries, goals)
-    case 'sleep':
-      return calculateSleepScoreRaw(dateStr, entries)
-    case 'finance':
-      return calculateFinanceScoreRaw(dateStr, entries, goals)
-    case 'social':
-      return calculateSocialScoreRaw(dateStr, entries)
-    case 'work':
-      return calculateWorkScoreRaw(dateStr, entries, goals)
-    case 'nutrition':
-      return calculateNutritionScoreRaw(dateStr, entries)
-    case 'health':
-      return calculateHealthScoreRaw(dateStr, entries)
-    default:
-      return 0
+function calculateSubstancesScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'substances', dateStr)
+  const lastWeek = lastWeekEntries(entries, 'substances', dateStr)
+
+  const HARD = ['Joint', 'Blüten', 'Zigarette', 'Alkohol']
+  const hardCount = week.filter((e) => HARD.includes(e.subcategory)).length
+
+  // Abstinence from hard substances (50%)
+  let f1 = 50
+  if (hardCount === 0) f1 = 50
+  else if (hardCount <= 2) f1 = 38
+  else if (hardCount <= 5) f1 = 22
+  else if (hardCount <= 10) f1 = 10
+  else f1 = 0
+
+  // Caffeine moderation — avg ≤2/day is fine (30%)
+  const caffeineCount = week.filter((e) => ['Kaffee', 'Energy Drink'].includes(e.subcategory)).length
+  const avgDaily = caffeineCount / 7
+  const f2 = avgDaily <= 2 ? 30 : avgDaily <= 3 ? 20 : avgDaily <= 5 ? 10 : 0
+
+  // Trend vs last week — fewer hard uses = better (20%)
+  const lastHard = lastWeek.filter((e) => HARD.includes(e.subcategory)).length
+  const f3 = hardCount <= lastHard ? 20 : (lastHard / Math.max(1, hardCount)) * 20
+
+  return Math.round(f1 + f2 + f3)
+}
+
+function calculateMoodScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'mood', dateStr)
+  if (week.length === 0) return 75
+
+  const POSITIVE = new Set(['Happy', 'Relaxed', 'Motivated', 'Euphoric', 'Grateful', 'Excited', 'Calm'])
+  const NEGATIVE = new Set(['Sad', 'Stressed', 'Angry', 'Anxious', 'Depressed', 'Frustrated', 'Lonely'])
+
+  // Valence-weighted score (50%)
+  const valenceScores = week.map((e) => {
+    const intensity = (e.fields as any).intensity ?? 5
+    const emotion = e.subcategory
+    if (POSITIVE.has(emotion)) return intensity
+    if (NEGATIVE.has(emotion)) return 10 - intensity
+    return 5 // Tired, Neutral
+  })
+  const f1 = (avg(valenceScores) / 10) * 50
+
+  // Trend vs last week (30%)
+  const lastWeek = lastWeekEntries(entries, 'mood', dateStr)
+  const thisPositive = week.filter((e) => POSITIVE.has(e.subcategory)).length
+  const lastPositive = lastWeek.filter((e) => POSITIVE.has(e.subcategory)).length
+  const f2 = thisPositive >= lastPositive ? 30 : (thisPositive / Math.max(1, lastPositive)) * 30
+
+  // Logging consistency — at least 5 unique days this week (20%)
+  const uniqueDays = new Set(week.map((e) => e.timestamp.split('T')[0])).size
+  const f3 = Math.min(1, uniqueDays / 5) * 20
+
+  return Math.round(f1 + f2 + f3)
+}
+
+function calculateIntimacyScore(dateStr: string, entries: Entry[]): number {
+  const week = weekEntries(entries, 'intimacy', dateStr)
+  const lastWeek = lastWeekEntries(entries, 'intimacy', dateStr)
+
+  const CONNECTION = new Set(['Sex', 'Kiss', 'Date', 'Flirt', 'Cuddling'])
+  const connections = week.filter((e) => CONNECTION.has(e.subcategory)).length
+
+  // Connection frequency vs 2/week target (40%)
+  const f1 = Math.min(1, connections / 2) * 40
+
+  // Partner quality / satisfaction (35%)
+  const qualities = week
+    .map((e) => (e.fields as any).partnerQuality ?? (e.fields as any).quality)
+    .filter((v) => typeof v === 'number')
+  const f2 = qualities.length > 0 ? (avg(qualities) / 10) * 35 : 17.5
+
+  // Trend vs last week (25%)
+  const lastConnections = lastWeek.filter((e) => CONNECTION.has(e.subcategory)).length
+  const f3 = connections >= lastConnections ? 25 : (connections / Math.max(1, lastConnections)) * 25
+
+  return Math.round(f1 + f2 + f3)
+}
+
+// ─── Dispatcher ───────────────────────────────────────────────────────────────
+
+function calculateRawScore(cat: CategoryId, dateStr: string, entries: Entry[], goals: Goal[]): number {
+  switch (cat) {
+    case 'fitness':    return calculateFitnessScore(dateStr, entries, goals)
+    case 'sleep':      return calculateSleepScore(dateStr, entries)
+    case 'finance':    return calculateFinanceScore(dateStr, entries, goals)
+    case 'social':     return calculateSocialScore(dateStr, entries)
+    case 'work':       return calculateWorkScore(dateStr, entries, goals)
+    case 'nutrition':  return calculateNutritionScore(dateStr, entries)
+    case 'health':     return calculateHealthScore(dateStr, entries)
+    case 'substances': return calculateSubstancesScore(dateStr, entries)
+    case 'mood':       return calculateMoodScore(dateStr, entries)
+    case 'intimacy':   return calculateIntimacyScore(dateStr, entries)
+    default:           return 0
   }
 }
 
-// ─── useScoreStore Store ──────────────────────────────────────────────────────────
+const ALL_CATEGORIES: CategoryId[] = [
+  'substances', 'intimacy', 'fitness', 'sleep', 'mood',
+  'nutrition', 'finance', 'social', 'work', 'health',
+]
+
+const DEFAULT_WEIGHTS: Record<string, number> = {
+  sleep: 25, fitness: 20, work: 20, finance: 15,
+  social: 10, nutrition: 5, health: 5, mood: 5,
+  substances: 5, intimacy: 5,
+}
+
+// ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useScoreStore = create<ScoreState>()(
   persist(
@@ -418,238 +414,124 @@ export const useScoreStore = create<ScoreState>()(
         const goals = useGoalsStore.getState().goals
         const profile = useProfileStore.getState().profile
 
-        // Check overall freeze: No entries logged today at all?
-        const entriesToday = entries.filter((e) => e.timestamp.startsWith(dateStr))
-        const hasAnyEntriesToday = entriesToday.length > 0
-
-        if (!hasAnyEntriesToday) {
-          // FREEZE: Find the most recent day before dateStr with entries
-          const daysWithEntries = Array.from(new Set(entries.map((e) => e.timestamp.split('T')[0])))
+        // Freeze to last logged day if nothing today
+        const hasAnyToday = entries.some((e) => e.timestamp.startsWith(dateStr))
+        if (!hasAnyToday) {
+          const lastDay = Array.from(new Set(entries.map((e) => e.timestamp.split('T')[0])))
             .filter((d) => d < dateStr)
-            .sort((a, b) => b.localeCompare(a))
+            .sort((a, b) => b.localeCompare(a))[0]
 
-          if (daysWithEntries.length > 0) {
-            const frozenDate = daysWithEntries[0]
-            // Calculate scores on that frozen date
-            const result = get().calculateAllScoresForDate(frozenDate)
-            return {
-              ...result,
-              isFrozen: true,
-              frozenDate,
-            }
+          if (lastDay) {
+            return { ...get().calculateAllScoresForDate(lastDay), isFrozen: true, frozenDate: lastDay }
           }
         }
 
-        // Determine active categories
-        // Nutrition is active only if nutrition goals are active
-        const hasNutritionGoals = goals.some((g) => g.category === 'nutrition' && !g.achieved)
-        // Health is active only if health goals are active
-        const hasHealthGoals = goals.some((g) => g.category === 'health' && !g.achieved)
+        const selectedCats = (profile.selectedCategories?.length
+          ? profile.selectedCategories
+          : ALL_CATEGORIES) as CategoryId[]
 
-        const activeCategories: CategoryId[] = ['sleep', 'fitness', 'work', 'finance', 'social']
-        if (hasNutritionGoals) activeCategories.push('nutrition')
-        if (hasHealthGoals) activeCategories.push('health')
-
-        // Fetch user weights (or use default weights)
-        const defaultWeights: Record<string, number> = {
-          sleep: 25,
-          fitness: 20,
-          work: 20,
-          finance: 15,
-          social: 10,
-          nutrition: 5,
-          health: 5,
-        }
-        const weights = (profile as any).scoreWeights || defaultWeights
+        const weights: Record<string, number> = { ...DEFAULT_WEIGHTS, ...(profile.scoreWeights ?? {}) }
 
         const categoriesResult = {} as Record<CategoryId, CategoryScoreDetail>
 
-        activeCategories.forEach((catId) => {
-          // Check if category has entry today
-          const hasEntryToday = entries.some(
-            (e) => e.category === catId && e.timestamp.startsWith(dateStr)
-          )
+        selectedCats.forEach((catId) => {
+          const hasToday = entries.some((e) => e.category === catId && e.timestamp.startsWith(dateStr))
 
-          if (hasEntryToday) {
+          if (hasToday) {
             const raw = calculateRawScore(catId, dateStr, entries, goals)
-            categoriesResult[catId] = {
-              score: raw,
-              lastScore: raw,
-              status: 'normal',
-            }
-          } else {
-            // Find last entry date for this category before dateStr
-            const catEntriesBefore = entries
-              .filter((e) => e.category === catId && e.timestamp.split('T')[0] < dateStr)
-              .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+            categoriesResult[catId] = { score: raw, lastScore: raw, status: 'normal' }
+            return
+          }
 
-            if (catEntriesBefore.length === 0) {
-              // No data ever
-              categoriesResult[catId] = {
-                score: null,
-                lastScore: 0,
-                status: 'grayed_out',
-              }
+          const prevEntries = entries
+            .filter((e) => e.category === catId && e.timestamp.split('T')[0] < dateStr)
+            .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
+          if (prevEntries.length === 0) {
+            categoriesResult[catId] = { score: null, lastScore: 0, status: 'grayed_out' }
+            return
+          }
+
+          const lastDate = prevEntries[0].timestamp.split('T')[0]
+          const daysSince = getDaysBetween(dateStr, lastDate)
+          const lastRaw = calculateRawScore(catId, lastDate, entries, goals)
+
+          if (daysSince === 1) {
+            // Silent freeze: only first missed day this week gets 100% carry
+            const b = getDateBoundaries(dateStr)
+            let missedThisWeek = 0
+            const c = new Date(dateStr)
+            c.setDate(c.getDate() - 1)
+            while (c.toISOString().split('T')[0] >= b.monday) {
+              const cs = c.toISOString().split('T')[0]
+              if (!entries.some((e) => e.category === catId && e.timestamp.startsWith(cs))) missedThisWeek++
+              c.setDate(c.getDate() - 1)
+            }
+            if (missedThisWeek === 0) {
+              categoriesResult[catId] = { score: lastRaw, lastScore: lastRaw, status: 'normal' }
             } else {
-              const lastEntryDate = catEntriesBefore[0].timestamp.split('T')[0]
-              const daysSince = getDaysBetween(dateStr, lastEntryDate)
-              const lastRawScore = calculateRawScore(catId, lastEntryDate, entries, goals)
-
-              if (daysSince === 1) {
-                // Check Weekly Silent Freeze:
-                // Let's see if we already used silent freeze this week (Monday to Sunday)
-                const bounds = getDateBoundaries(dateStr)
-                // To keep it simple, check if any day in [bounds.monday, dateStr) had a silent freeze used.
-                // We'll define a silent freeze as being used if we did NOT log that category, but carried forward at 100%.
-                // Let's check if there's any day in this week where daysSince was 1 and it was frozen at 100%.
-                // If this is the first missed day this week, it's a silent freeze (100% carry forward).
-                // Let's check how many days were missed this week before today.
-                let missedDaysThisWeek = 0
-                let checkDate = new Date(dateStr)
-                checkDate.setDate(checkDate.getDate() - 1)
-                while (checkDate.toISOString().split('T')[0] >= bounds.monday) {
-                  const checkStr = checkDate.toISOString().split('T')[0]
-                  const hasEntryOnDay = entries.some(
-                    (e) => e.category === catId && e.timestamp.startsWith(checkStr)
-                  )
-                  if (!hasEntryOnDay) {
-                    missedDaysThisWeek++
-                  }
-                  checkDate.setDate(checkDate.getDate() - 1)
-                }
-
-                const isSilentFreeze = missedDaysThisWeek === 0
-
-                if (isSilentFreeze) {
-                  categoriesResult[catId] = {
-                    score: lastRawScore, // 100% carry forward
-                    lastScore: lastRawScore,
-                    status: 'normal', // treated as normal/zero impact
-                  }
-                } else {
-                  categoriesResult[catId] = {
-                    score: Math.round(lastRawScore * 0.90),
-                    lastScore: lastRawScore,
-                    status: 'carry_90',
-                  }
-                }
-              } else if (daysSince === 2) {
-                categoriesResult[catId] = {
-                  score: Math.round(lastRawScore * 0.75),
-                  lastScore: lastRawScore,
-                  status: 'carry_75',
-                }
-              } else {
-                categoriesResult[catId] = {
-                  score: null,
-                  lastScore: lastRawScore,
-                  status: 'grayed_out',
-                }
-              }
+              categoriesResult[catId] = { score: Math.round(lastRaw * 0.9), lastScore: lastRaw, status: 'carry_90' }
             }
+          } else if (daysSince === 2) {
+            categoriesResult[catId] = { score: Math.round(lastRaw * 0.75), lastScore: lastRaw, status: 'carry_75' }
+          } else {
+            categoriesResult[catId] = { score: null, lastScore: lastRaw, status: 'grayed_out' }
           }
         })
 
-        // Fill in inactive categories as grayed out
-        ;['sleep', 'fitness', 'work', 'finance', 'social', 'nutrition', 'health'].forEach((id) => {
-          if (!categoriesResult[id as CategoryId]) {
-            categoriesResult[id as CategoryId] = {
-              score: null,
-              lastScore: 0,
-              status: 'grayed_out',
-            }
+        // Fill unselected categories as grayed out
+        ALL_CATEGORIES.forEach((id) => {
+          if (!categoriesResult[id]) {
+            categoriesResult[id] = { score: null, lastScore: 0, status: 'grayed_out' }
           }
         })
 
-        // Compute overall score
-        // Only include active categories that are NOT grayed out and have data in last 3 days (i.e. score is not null)
-        const categoriesForOverall = activeCategories.filter(
-          (catId) => categoriesResult[catId].score !== null
-        )
+        // Weighted overall from categories that have a score
+        const scored = selectedCats.filter((id) => categoriesResult[id].score !== null)
+        if (scored.length === 0) return { overall: null, categories: categoriesResult, isFrozen: false }
 
-        if (categoriesForOverall.length === 0) {
-          return {
-            overall: null,
-            categories: categoriesResult,
-            isFrozen: false,
-          }
-        }
+        const totalWeight = scored.reduce((s, id) => s + (weights[id] ?? 0), 0)
+        const overall =
+          totalWeight === 0
+            ? Math.round(scored.reduce((s, id) => s + (categoriesResult[id].score ?? 0), 0) / scored.length)
+            : Math.round(scored.reduce((s, id) => s + (categoriesResult[id].score ?? 0) * ((weights[id] ?? 0) / totalWeight), 0))
 
-        let totalWeight = 0
-        categoriesForOverall.forEach((catId) => {
-          totalWeight += weights[catId] || 0
-        })
-
-        if (totalWeight === 0) {
-          // If weights are 0, average them equally
-          let sum = 0
-          categoriesForOverall.forEach((catId) => {
-            sum += categoriesResult[catId].score || 0
-          })
-          return {
-            overall: Math.round(sum / categoriesForOverall.length),
-            categories: categoriesResult,
-            isFrozen: false,
-          }
-        }
-
-        let weightedSum = 0
-        categoriesForOverall.forEach((catId) => {
-          const sc = categoriesResult[catId].score || 0
-          const wt = weights[catId] || 0
-          weightedSum += sc * (wt / totalWeight)
-        })
-
-        return {
-          overall: Math.round(weightedSum),
-          categories: categoriesResult,
-          isFrozen: false,
-        }
+        return { overall, categories: categoriesResult, isFrozen: false }
       },
 
       saveDailyScore: async (dateStr) => {
         const scores = get().calculateAllScoresForDate(dateStr)
         const authUserId = useProfileStore.getState().authUserId
 
-        const categoryScoresDb = {} as Record<string, number | null>
-        Object.entries(scores.categories).forEach(([k, v]) => {
-          categoryScoresDb[k] = v.score
-        })
+        const categoryScoresDb = Object.fromEntries(
+          Object.entries(scores.categories).map(([k, v]) => [k, v.score])
+        )
 
-        const item: Omit<ScoreHistoryItem, 'id'> = {
-          user_id: authUserId || 'guest',
+        const newItem: ScoreHistoryItem = {
+          id: '',
+          user_id: authUserId ?? 'guest',
           date: dateStr,
           overall_score: scores.overall,
           category_scores: categoryScoresDb,
         }
 
-        // Update local state history
         set((state) => {
-          const existingIdx = state.history.findIndex((h) => h.date === dateStr)
-          const newItem = { ...item, id: existingIdx >= 0 ? state.history[existingIdx].id : Math.random().toString() }
-          const newHistory = [...state.history]
-          if (existingIdx >= 0) {
-            newHistory[existingIdx] = newItem
-          } else {
-            newHistory.push(newItem)
-          }
-          return { history: newHistory }
+          const idx = state.history.findIndex((h) => h.date === dateStr)
+          const item = { ...newItem, id: idx >= 0 ? state.history[idx].id : Math.random().toString() }
+          const next = [...state.history]
+          if (idx >= 0) next[idx] = item
+          else next.push(item)
+          return { history: next }
         })
 
-        // Sync to Supabase if logged in
         if (authUserId) {
           try {
-            const { error } = await (supabase as any)
-              .from('score_history')
-              .upsert({
-                user_id: authUserId,
-                date: dateStr,
-                overall_score: scores.overall,
-                category_scores: categoryScoresDb,
-              }, { onConflict: 'user_id,date' })
-            if (error) throw error
+            await (supabase as any).from('score_history').upsert(
+              { user_id: authUserId, date: dateStr, overall_score: scores.overall, category_scores: categoryScoresDb },
+              { onConflict: 'user_id,date' }
+            )
           } catch (err) {
-            console.error('Failed to sync score history to Supabase:', err)
+            console.error('[Score] Supabase sync error:', err)
           }
         }
       },
@@ -657,20 +539,16 @@ export const useScoreStore = create<ScoreState>()(
       loadHistory: async () => {
         const authUserId = useProfileStore.getState().authUserId
         if (!authUserId) return
-
         try {
           const { data, error } = await (supabase as any)
             .from('score_history')
             .select('*')
             .eq('user_id', authUserId)
             .order('date', { ascending: false })
-
           if (error) throw error
-          if (data) {
-            set({ history: data })
-          }
+          if (data) set({ history: data })
         } catch (err) {
-          console.error('Failed to load score history:', err)
+          console.error('[Score] Load history error:', err)
         }
       },
 
