@@ -487,6 +487,42 @@ export function ProfileScreen() {
         </div>
       </div>
 
+      {/* ── Sign In / Create Account (shown when not authenticated) ── */}
+      {!authUserId && (
+        <div className="px-4 pb-2">
+          <AnimatePresence mode="wait">
+            {cloudSyncFormOpen ? (
+              <motion.div
+                key="auth-form"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+              >
+                <CloudSyncForm onClose={() => setCloudSyncFormOpen(false)} />
+              </motion.div>
+            ) : (
+              <motion.button
+                key="auth-cta"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setCloudSyncFormOpen(true)}
+                className="w-full bg-bg-card border border-accent-red/40 rounded-lg p-4 flex items-center gap-3 text-left hover:border-accent-red/70 transition-colors"
+              >
+                <Cloud size={18} className="text-accent-red flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[#F5F5F5] text-sm font-heading font-bold">Sign In / Create Account</p>
+                  <p className="text-[#888888] text-xs mt-0.5">Back up your data · Enable AI chat · Sync across devices</p>
+                </div>
+                <ChevronRight size={16} className="text-[#444444]" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* ── Edit Profile Bottom Sheet ── */}
       <AnimatePresence>
         {editProfileOpen && (
@@ -675,9 +711,9 @@ export function ProfileScreen() {
         />
       </div>
 
-      {/* Cloud Sync Form */}
+      {/* Cloud Sync Form — only for authenticated users re-entering credentials */}
       <AnimatePresence>
-        {cloudSyncFormOpen && (
+        {authUserId && cloudSyncFormOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}

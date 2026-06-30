@@ -114,7 +114,7 @@ export function buildDataContext(
     for (const entry of financeEntries) {
       const f = entry.fields as { amount?: number }
       const amount = f.amount ?? 0
-      if (entry.subcategory === 'Income') {
+      if (entry.subcategory === 'Einnahme') {
         income += amount
       } else {
         expenses += amount

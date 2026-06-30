@@ -9,6 +9,7 @@ import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useHabitsStore } from '@/stores/useHabitsStore'
 import { useGoalsStore } from '@/stores/useGoalsStore'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { useScoreStore } from '@/stores/useScoreStore'
 import type { Entry } from '@/types'
 
 let syncInProgress = false
@@ -261,7 +262,8 @@ export async function pullFromSupabase(userId: string) {
       }
     }
 
-    
+    // Load score history from Supabase
+    await useScoreStore.getState().loadHistory()
   } catch (err) {
     console.error('[Sync] Pull error:', err)
   }
