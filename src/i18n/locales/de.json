@@ -82,7 +82,9 @@
     "todaysHabits": "Heutige Gewohnheiten",
     "noHabits": "Noch keine Gewohnheiten",
     "done": "erledigt",
-    "seeAll": "Alle anzeigen"
+    "seeAll": "Alle anzeigen",
+    "welcomeBody": "Dein KI-PA analysiert alles und zeigt dir Muster die du nie gesehen hast.",
+    "welcomeCta": "Ersten Eintrag loggen"
   },
   "common": {
     "save": "Speichern",
@@ -153,6 +155,28 @@
     "dailyReport": "Tagesbericht",
     "weeklyReport": "Wochenbericht",
     "version": "Version"
+  },
+  "entry": {
+    "type": "Typ",
+    "time": "Zeit",
+    "tags": "Tags (kommagetrennt)",
+    "tagsPlaceholder": "z.B. morgen, routine, zuhause",
+    "note": "Notiz",
+    "notePlaceholder": "Notiz hinzufügen... (optional)",
+    "nowChange": "Jetzt · Ändern →",
+    "save": "Eintrag speichern",
+    "selectSubcategory": "Bitte wähle eine Unterkategorie",
+    "saved": "Eintrag gespeichert!",
+    "brand": "Marke (optional)"
+  },
+  "gauge": {
+    "ofGoal": "{{percent}}% von Ziel {{goal}}",
+    "outOf10": "/ 10",
+    "dragHint": "Zeiger ziehen um Wert einzustellen"
+  },
+  "profile": {
+    "monthlyIncome": "Monatliches Einkommen",
+    "monthlyIncomePlaceholder": "z.B. 3000"
   },
   "errors": {
     "noConnection": "Keine Internetverbindung",

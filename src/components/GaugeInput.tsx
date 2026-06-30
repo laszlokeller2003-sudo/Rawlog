@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, PointerEvent as ReactPointerEvent } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 
 interface GaugeInputProps {
   value: number
@@ -10,8 +11,10 @@ interface GaugeInputProps {
 }
 
 export function GaugeInput({ value, onChange, label, personalGoal, color }: GaugeInputProps) {
+  const { t } = useTranslation()
   const svgRef = useRef<SVGSVGElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [showHint, setShowHint] = useState(() => !localStorage.getItem('lyfe_gauge_hint_seen'))
 
   // Clamp value between 0 and 10
   const safeValue = Math.min(10, Math.max(0, value))
@@ -19,6 +22,10 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
   const handlePointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
     setIsDragging(true)
+    if (showHint) {
+      setShowHint(false)
+      localStorage.setItem('lyfe_gauge_hint_seen', '1')
+    }
     updateValueFromEvent(e)
   }
 
@@ -36,24 +43,19 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
   const updateValueFromEvent = (e: ReactPointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return
     const rect = svgRef.current.getBoundingClientRect()
-    // Center is bottom-middle of the SVG viewbox (since it's a semicircle)
     const cx = rect.left + rect.width / 2
-    const cy = rect.bottom - 10 // approx center Y relative to bottom padding
+    const cy = rect.bottom - 10
     const x = e.clientX - cx
     const y = e.clientY - cy
 
-    // Calculate angle in radians: Math.atan2(y, x)
-    // -PI is left (0), -PI/2 is top (5), 0 is right (10)
     let angle = Math.atan2(y, x)
     if (angle > 0) {
-      // If below the arc, clamp to edges
       angle = x < 0 ? -Math.PI : 0
     }
 
-    // Map angle from [-PI, 0] to [0, 10]
     let newValue = ((angle + Math.PI) / Math.PI) * 10
     newValue = Math.round(Math.max(0, Math.min(10, newValue)))
-    
+
     if (newValue !== safeValue) {
       onChange(newValue)
     }
@@ -67,7 +69,7 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
   return (
     <div className="flex flex-col items-center select-none w-full max-w-[280px] mx-auto py-2">
       {label && <span className="input-label mb-4 self-start">{label}</span>}
-      
+
       <div className="relative w-full aspect-[2/1]">
         <svg
           ref={svgRef}
@@ -88,7 +90,7 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
               <stop offset="100%" stopColor="#FF2020" />
             </linearGradient>
           </defs>
-          
+
           {/* Background track */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
@@ -97,7 +99,7 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
             strokeWidth="16"
             strokeLinecap="round"
           />
-          
+
           {/* Colored arc */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
@@ -106,7 +108,11 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
             strokeWidth="16"
             strokeLinecap="round"
           />
-          
+
+          {/* Arc end labels */}
+          <text x="12" y="118" textAnchor="middle" fontSize="10" fill="#444444" fontFamily="system-ui, sans-serif">0</text>
+          <text x="188" y="118" textAnchor="middle" fontSize="10" fill="#444444" fontFamily="system-ui, sans-serif">10</text>
+
           {/* Goal marker (optional) */}
           {personalGoal && (
             <line
@@ -138,15 +144,25 @@ export function GaugeInput({ value, onChange, label, personalGoal, color }: Gaug
           </span>
           {personalGoal ? (
             <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider font-semibold">
-              {percentToGoal}% of goal {personalGoal}
+              {t('gauge.ofGoal', { percent: percentToGoal, goal: personalGoal })}
             </span>
           ) : (
             <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider font-semibold">
-              / 10
+              {t('gauge.outOf10')}
             </span>
           )}
         </div>
       </div>
+
+      {/* One-time drag hint */}
+      {showHint && (
+        <p
+          className="text-[10px] font-mono mt-1"
+          style={{ color: '#444444', textAlign: 'center' }}
+        >
+          {t('gauge.dragHint')}
+        </p>
+      )}
     </div>
   )
 }

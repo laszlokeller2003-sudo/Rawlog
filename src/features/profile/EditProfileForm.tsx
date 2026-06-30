@@ -73,6 +73,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
   const [language, setLanguage] = useState<Language>(profile.language)
   const [currency, setCurrency] = useState<Currency>(profile.currency)
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl ?? '')
+  const [monthlyIncome, setMonthlyIncome] = useState(profile.monthlyIncome?.toString() ?? '')
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -99,6 +100,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       language,
       currency,
       photoUrl: photoUrl || undefined,
+      monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome) : undefined,
     })
     toast.success('Profile saved')
     onClose()
@@ -203,6 +205,27 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
           value={currency}
           onChange={setCurrency}
         />
+      </div>
+
+      {/* Monthly Income */}
+      <div className="space-y-1.5">
+        <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
+          Monthly Income <span style={{ color: '#444444' }}>(optional)</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#888888', fontFamily: 'system-ui, sans-serif' }}>
+            {currency === 'EUR' ? '€' : currency === 'USD' ? '$' : '£'}
+          </span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={monthlyIncome}
+            onChange={(e) => setMonthlyIncome(e.target.value)}
+            placeholder="e.g. 3000"
+            className="w-full bg-bg-elevated border border-border rounded-lg pl-8 pr-3 py-2.5 text-[#F5F5F5] text-sm placeholder:text-[#444444] focus:outline-none focus:border-accent-red focus:shadow-red-glow transition-all"
+          />
+        </div>
       </div>
 
       {/* Save button */}

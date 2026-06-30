@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SubstanceFields } from '@/types'
 import { RatingSlider } from '@/components/RatingSlider'
 import { PillSelector } from '@/components/PillSelector'
@@ -37,6 +38,7 @@ const COFFEE_CAFFEINE: Record<string, number> = {
 }
 
 export function SubstancesForm({ subcategory, fields, onChange }: SubstancesFormProps) {
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
 
   // Auto standard drinks calculation
@@ -190,7 +192,7 @@ export function SubstancesForm({ subcategory, fields, onChange }: SubstancesForm
         {showMore && (
           <>
             <div className="divider" />
-            <Input label="Brand (optional)" value={fields.brand ?? ''} onChange={(v) => onChange({ ...fields, brand: v })} placeholder="e.g. Marlboro" />
+            <Input label={t('entry.brand')} value={fields.brand ?? ''} onChange={(v) => onChange({ ...fields, brand: v })} placeholder="e.g. Marlboro" />
             <RatingSlider label="Mood before" value={fields.moodBefore ?? 0} onChange={(v) => onChange({ ...fields, moodBefore: v })} />
           </>
         )}
@@ -281,7 +283,7 @@ export function SubstancesForm({ subcategory, fields, onChange }: SubstancesForm
   if (subcategory === 'Energy Drink') {
     return (
       <div className="space-y-4">
-        <Input label="Brand" value={fields.brand ?? ''} onChange={(v) => onChange({ ...fields, brand: v })} placeholder="e.g. Red Bull" />
+        <Input label={t('entry.brand')} value={fields.brand ?? ''} onChange={(v) => onChange({ ...fields, brand: v })} placeholder="e.g. Red Bull" />
         <div className="flex gap-2">
           <div className="flex-1">
             <label className="input-label">Size (ml)</label>

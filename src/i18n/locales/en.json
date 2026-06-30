@@ -82,7 +82,9 @@
     "todaysHabits": "Today's Habits",
     "noHabits": "No habits yet",
     "done": "done",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "welcomeBody": "Your AI PA analyzes everything and shows you patterns you've never seen before.",
+    "welcomeCta": "Log your first entry"
   },
   "common": {
     "save": "Save",
@@ -153,6 +155,28 @@
     "dailyReport": "Daily report",
     "weeklyReport": "Weekly report",
     "version": "Version"
+  },
+  "entry": {
+    "type": "Type",
+    "time": "Time",
+    "tags": "Tags (comma-separated)",
+    "tagsPlaceholder": "e.g. morning, routine, home",
+    "note": "Note",
+    "notePlaceholder": "Add a note... (optional)",
+    "nowChange": "Now · Change →",
+    "save": "Save Entry",
+    "selectSubcategory": "Please select a subcategory",
+    "saved": "Entry saved!",
+    "brand": "Brand (optional)"
+  },
+  "gauge": {
+    "ofGoal": "{{percent}}% of goal {{goal}}",
+    "outOf10": "/ 10",
+    "dragHint": "Drag the needle to set your value"
+  },
+  "profile": {
+    "monthlyIncome": "Monthly Income",
+    "monthlyIncomePlaceholder": "e.g. 3000"
   },
   "errors": {
     "noConnection": "No internet connection",

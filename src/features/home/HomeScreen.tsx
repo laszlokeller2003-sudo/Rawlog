@@ -432,6 +432,28 @@ export function HomeScreen() {
             )}
           </motion.div>
 
+          {/* ─ Welcome card (first-time users) ───────────────────── */}
+          {entries.length === 0 && (
+            <motion.div variants={fadeUp}>
+              <div
+                className="card flex flex-col gap-3 py-6 px-5 text-center"
+                style={{ border: '1px solid rgba(255,32,32,0.2)', background: 'rgba(255,32,32,0.04)' }}
+              >
+                <span style={{ fontSize: 36 }}>🤖</span>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#F5F5F5', fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.4 }}>
+                  {t('home.welcomeBody')}
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary mt-1"
+                  onClick={() => setActiveTab('log')}
+                >
+                  {t('home.welcomeCta')}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* ─ Budget Pill ───────────────────────────────────────── */}
           {profile.dailyBudget && profile.dailyBudget > 0 && (
             <motion.div variants={fadeUp}>
@@ -445,7 +467,7 @@ export function HomeScreen() {
                 }}
               >
                 <span style={{ fontSize: 14 }}>💰</span>
-                <span className="font-mono text-sm font-semibold" style={{ color: todaySpend > profile.dailyBudget ? '#FF2020' : '#22C55E' }}>
+                <span className="font-mono text-sm font-semibold" style={{ color: todaySpend > profile.dailyBudget ? '#FF2020' : '#22C55E', fontFamily: 'system-ui, sans-serif' }}>
                   {profile.currency === 'EUR' ? '€' : profile.currency === 'USD' ? '$' : '£'}
                   {todaySpend.toFixed(0)} / {profile.dailyBudget} heute
                 </span>

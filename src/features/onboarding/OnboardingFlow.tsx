@@ -194,6 +194,7 @@ interface ProfileData {
   biologicalSex: BiologicalSex | ''
   language: Language
   photoUrl: string
+  monthlyIncome?: number
 }
 
 function ProfileScreen({
@@ -212,6 +213,7 @@ function ProfileScreen({
   const [biologicalSex, setBiologicalSex] = useState<BiologicalSex | ''>(profile.biologicalSex ?? '')
   const [language, setLanguage] = useState<Language>(profile.language)
   const [photoUrl, setPhotoUrl] = useState(profile.photoUrl ?? '')
+  const [monthlyIncome, setMonthlyIncome] = useState(profile.monthlyIncome?.toString() ?? '')
 
   const handlePhotoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -330,7 +332,7 @@ function ProfileScreen({
         </div>
 
         {/* Language */}
-        <div className="mb-8">
+        <div className="mb-5">
           <label className="input-label">{t('onboarding.profile.language')}</label>
           <div className="flex gap-2">
             {langOptions.map((opt) => (
@@ -346,6 +348,20 @@ function ProfileScreen({
             ))}
           </div>
         </div>
+
+        {/* Monthly Income */}
+        <div className="mb-8">
+          <label className="input-label">{t('profile.monthlyIncome')}</label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            className="input-field"
+            placeholder={t('profile.monthlyIncomePlaceholder')}
+            value={monthlyIncome}
+            onChange={(e) => setMonthlyIncome(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* CTA */}
@@ -355,7 +371,7 @@ function ProfileScreen({
           className="btn-primary"
           disabled={!name.trim()}
           onClick={() =>
-            onNext({ name, dateOfBirth, biologicalSex, language, photoUrl })
+            onNext({ name, dateOfBirth, biologicalSex, language, photoUrl, monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome) : undefined })
           }
         >
           {t('common.next')}
@@ -864,6 +880,7 @@ export function OnboardingFlow() {
         biologicalSex: data.biologicalSex || undefined,
         language: data.language,
         photoUrl: data.photoUrl || undefined,
+        monthlyIncome: data.monthlyIncome,
       })
       goNext()
     },

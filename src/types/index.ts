@@ -374,6 +374,7 @@ export interface UserProfile {
   heightCm?: number
   // Finance
   dailyBudget?: number
+  monthlyIncome?: number
   // Nutrition goals
   calorieGoal?: number
   proteinGoalG?: number

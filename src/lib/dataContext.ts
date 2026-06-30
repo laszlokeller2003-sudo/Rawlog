@@ -107,7 +107,7 @@ export function buildDataContext(
     (e) => e.category === 'finance' && new Date(e.timestamp) >= startOfMonth
   )
 
-  if (financeEntries.length > 0) {
+  if (financeEntries.length > 0 || profile.monthlyIncome) {
     let income = 0
     let expenses = 0
 
@@ -122,7 +122,12 @@ export function buildDataContext(
     }
 
     lines.push('=== FINANCE (this month) ===')
-    lines.push(`Income: ${income.toFixed(2)} ${profile.currency}`)
+    if (profile.monthlyIncome) {
+      lines.push(`Monthly income reference: ${profile.monthlyIncome.toFixed(2)} ${profile.currency}`)
+      const savingsRate = income > 0 ? ((income - expenses) / income * 100) : ((profile.monthlyIncome - expenses) / profile.monthlyIncome * 100)
+      lines.push(`Estimated savings rate: ${savingsRate.toFixed(1)}%`)
+    }
+    lines.push(`Logged income this month: ${income.toFixed(2)} ${profile.currency}`)
     lines.push(`Expenses: ${expenses.toFixed(2)} ${profile.currency}`)
     lines.push(`Net: ${(income - expenses).toFixed(2)} ${profile.currency}`)
     lines.push('')

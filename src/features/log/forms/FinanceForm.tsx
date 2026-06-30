@@ -49,7 +49,7 @@ function AmountRow({ fields, onChange }: { fields: FinanceFields; onChange: (f: 
       <label className="input-label">Betrag</label>
       <div className="flex gap-2 items-start">
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base font-mono" style={{ color: 'var(--text-secondary)' }}>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base" style={{ color: 'var(--text-secondary)', fontFamily: 'system-ui, sans-serif' }}>
             {CURRENCY_SYMBOL[fields.currency]}
           </span>
           <input

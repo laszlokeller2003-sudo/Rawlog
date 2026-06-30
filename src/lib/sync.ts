@@ -112,6 +112,7 @@ export async function pushToSupabase(userId: string) {
       onboarding_complete: profile.onboardingComplete,
       selected_categories: profile.selectedCategories,
       app_lock_enabled: profile.appLockEnabled,
+      monthly_income: profile.monthlyIncome ?? null,
     })
 
     // Push entries (upsert)
@@ -221,6 +222,7 @@ export async function pullFromSupabase(userId: string) {
         isPremium: profileData.is_premium,
         selectedCategories: profileData.selected_categories,
         appLockEnabled: profileData.app_lock_enabled,
+        monthlyIncome: profileData.monthly_income ?? undefined,
       })
     }
 

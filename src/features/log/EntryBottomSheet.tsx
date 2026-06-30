@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { useUIStore } from '@/stores/useUIStore'
 import { useEntriesStore } from '@/stores/useEntriesStore'
@@ -160,6 +161,7 @@ function CategoryForm({
 // ─── EntryBottomSheet ─────────────────────────────────────────────────────────
 
 export function EntryBottomSheet() {
+  const { t } = useTranslation()
   const { isEntrySheetOpen, activeEntryCategory, closeEntrySheet } = useUIStore()
   const { addEntry } = useEntriesStore()
   const { profile } = useProfileStore()
@@ -203,7 +205,7 @@ export function EntryBottomSheet() {
 
   const handleSave = () => {
     if (!subcategory) {
-      toast.error('Please select a subcategory')
+      toast.error(t('entry.selectSubcategory'))
       return
     }
 
@@ -220,7 +222,7 @@ export function EntryBottomSheet() {
       tags: parsedTags.length > 0 ? parsedTags : undefined,
     })
 
-    toast.success('Entry saved! ✓', {
+    toast.success(t('entry.saved'), {
       style: {
         background: 'var(--bg-card)',
         color: 'var(--text-primary)',
@@ -259,7 +261,7 @@ export function EntryBottomSheet() {
 
       {/* Subcategory selector */}
       <div className="px-4 pb-4">
-        <label className="input-label">Type</label>
+        <label className="input-label">{t('entry.type')}</label>
         <PillSelector
           options={category.subcategories}
           value={subcategory}
@@ -284,14 +286,13 @@ export function EntryBottomSheet() {
       {/* Timestamp row */}
       <div className="px-4 pb-3">
         <div className="flex items-center justify-between">
-          <span className="input-label mb-0">Time</span>
+          <span className="input-label mb-0">{t('entry.time')}</span>
           {!useCustomTime ? (
             <button
               type="button"
               className="btn-ghost text-xs"
               onClick={() => {
                 setUseCustomTime(true)
-                // Default to current datetime-local value
                 const now = new Date()
                 const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
                   .toISOString()
@@ -299,7 +300,7 @@ export function EntryBottomSheet() {
                 setCustomTime(local)
               }}
             >
-              Now · Change →
+              {t('entry.nowChange')}
             </button>
           ) : (
             <input
@@ -316,10 +317,10 @@ export function EntryBottomSheet() {
       {/* Tags input */}
       <div className="px-4 pb-3">
         <Input
-          label="Tags (comma-separated)"
+          label={t('entry.tags')}
           value={tagsInput}
           onChange={setTagsInput}
-          placeholder="e.g. morning, routine, home"
+          placeholder={t('entry.tagsPlaceholder')}
         />
         {parsedTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
@@ -335,10 +336,10 @@ export function EntryBottomSheet() {
       {/* Note */}
       <div className="px-4 pb-4">
         <Input
-          label="Note"
+          label={t('entry.note')}
           value={note}
           onChange={setNote}
-          placeholder="Add a note... (optional)"
+          placeholder={t('entry.notePlaceholder')}
           multiline
           rows={2}
         />
@@ -351,7 +352,7 @@ export function EntryBottomSheet() {
           className="btn-primary"
           onClick={handleSave}
         >
-          Save Entry
+          {t('entry.save')}
         </button>
       </div>
     </BottomSheet>
