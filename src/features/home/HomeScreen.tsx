@@ -12,7 +12,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { useScoreStore } from '@/stores/useScoreStore'
 import { DEFAULT_CATEGORIES, getCategoryById, getCategoryName } from '@/lib/categories'
 import { cn, toDateString } from '@/lib/utils'
-import type { CategoryId, MoodFields } from '@/types'
+import type { CategoryId, MoodFields, FinanceFields } from '@/types'
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
 
@@ -379,6 +379,13 @@ export function HomeScreen() {
     return DEFAULT_CATEGORIES
   }, [])
 
+  // Budget pill
+  const todaySpend = useMemo(() => {
+    return entries
+      .filter((e) => e.category === 'finance' && e.subcategory !== 'Einnahme' && e.timestamp.startsWith(todayStr))
+      .reduce((sum, e) => sum + Math.abs((e.fields as FinanceFields).amount ?? 0), 0)
+  }, [entries, todayStr])
+
   // Recent feed entries (last 8)
   const recentEntries = useMemo(() => entries.slice(0, 8), [entries])
 
@@ -424,6 +431,27 @@ export function HomeScreen() {
               </div>
             )}
           </motion.div>
+
+          {/* ─ Budget Pill ───────────────────────────────────────── */}
+          {profile.dailyBudget && profile.dailyBudget > 0 && (
+            <motion.div variants={fadeUp}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('dashboards')}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{
+                  background: todaySpend > profile.dailyBudget ? 'rgba(255,32,32,0.12)' : 'rgba(34,197,94,0.1)',
+                  border: `1px solid ${todaySpend > profile.dailyBudget ? 'rgba(255,32,32,0.3)' : 'rgba(34,197,94,0.25)'}`,
+                }}
+              >
+                <span style={{ fontSize: 14 }}>💰</span>
+                <span className="font-mono text-sm font-semibold" style={{ color: todaySpend > profile.dailyBudget ? '#FF2020' : '#22C55E' }}>
+                  {profile.currency === 'EUR' ? '€' : profile.currency === 'USD' ? '$' : '£'}
+                  {todaySpend.toFixed(0)} / {profile.dailyBudget} heute
+                </span>
+              </button>
+            </motion.div>
+          )}
 
           {/* ─ Score Cards ────────────────────────────────────────── */}
           <motion.div variants={fadeUp} className="flex flex-col gap-3">

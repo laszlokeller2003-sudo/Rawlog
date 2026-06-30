@@ -79,15 +79,29 @@ export interface FitnessFields {
 }
 
 export interface SleepFields {
-  duration?: number // minutes total
+  duration?: number // minutes total (auto-calc from bedtime/waketime)
   quality?: number
   dreams?: boolean
+  dreamText?: string
+  bedtime?: string // HH:MM
+  waketime?: string // HH:MM
+  timesWoken?: number
+  sleepAid?: string
+  environment?: string
 }
 
+export type MoodEmotion =
+  | 'Happy' | 'Sad' | 'Stressed' | 'Relaxed' | 'Angry' | 'Motivated'
+  | 'Tired' | 'Anxious' | 'Euphoric' | 'Depressed' | 'Neutral' | 'Grateful'
+  | 'Frustrated' | 'Lonely' | 'Excited' | 'Calm'
+
 export interface MoodFields {
+  primaryEmotion?: MoodEmotion
   intensity?: number
-  emoji?: string
+  bodyFeeling?: string
   triggers?: MoodTrigger[]
+  helpers?: string[]
+  emoji?: string
 }
 
 export type MoodTrigger =
@@ -112,38 +126,104 @@ export interface NutritionFields {
 export interface FinanceFields {
   amount: number
   currency: Currency
+  // AUSGABE
   categoryTag?: FinanceCategoryTag
-  paymentMethod?: 'cash' | 'card' | 'transfer'
+  merchant?: string
+  paymentMethod?: 'Bar' | 'Karte' | 'Überweisung' | 'PayPal' | 'Klarna' | 'Crypto' | 'Sonstiges'
+  entryDate?: string // YYYY-MM-DD
   recurring?: boolean
+  recurringFrequency?: 'täglich' | 'wöchentlich' | 'monatlich' | 'jährlich'
+  impulseBuy?: boolean
+  // EINNAHME
+  source?: string
+  // SPAREN
+  account?: string
+  // INVESTITION
+  investType?: string
+  asset?: string
+  // SCHULDEN
+  toWhom?: string
 }
 
 export type FinanceCategoryTag =
-  | 'food'
-  | 'transport'
-  | 'entertainment'
-  | 'health'
-  | 'clothing'
-  | 'tech'
-  | 'other'
+  | 'Essen & Trinken'
+  | 'Transport'
+  | 'Shopping'
+  | 'Unterhaltung'
+  | 'Gesundheit'
+  | 'Wohnen'
+  | 'Abonnements'
+  | 'Reisen'
+  | 'Bildung'
+  | 'Sport'
+  | 'Körperpflege'
+  | 'Restaurant'
+  | 'Lebensmittel'
+  | 'Technik'
+  | 'Sonstiges'
 
 export interface SocialFields {
   who?: string
+  activity?: string
+  setting?: string
+  startTime?: string // HH:MM
+  endTime?: string // HH:MM
+  duration?: number // minutes (auto or manual)
+  energyBefore?: number
   energyAfter?: 'drained' | 'neutral' | 'energized'
   quality?: number
+  // Time breakdown
+  socialMediaPlatform?: string
+  socialMediaMinutes?: number
+  meTimeActivity?: string
+  meTimeMinutes?: number
+  friendMinutes?: number
+  familyMinutes?: number
+  partnerMinutes?: number
 }
 
 export interface WorkFields {
+  sessionType?: string
+  shiftMode?: boolean
+  shiftStart?: string // HH:MM
+  shiftEnd?: string // HH:MM
+  breakMinutes?: number
   duration?: number // minutes
   focusScore?: number
   tasksCompleted?: number
+  win?: string
+  blocker?: string
+  energyScore?: number
+  location?: string
 }
 
+export type HealthEventType = 'Medikament' | 'Symptom' | 'Messung' | 'Supplement' | 'Energie'
+
 export interface HealthFields {
+  eventType?: HealthEventType
+  // Medikament
+  medName?: string
+  medDose?: number
+  medUnit?: string
+  prescribed?: boolean
+  timing?: string
+  // Symptom
   symptom?: string
   severity?: number
   bodyPart?: string
-  medication?: string
+  symptomDuration?: string
+  // Messung
+  measureType?: string
+  measureValue?: number
+  measureUnit?: string
+  // Supplement
+  suppName?: string
+  suppDose?: number
+  suppTiming?: string
+  // Energie
   energy?: number
+  // legacy
+  medication?: string
 }
 
 export type EntryFields =

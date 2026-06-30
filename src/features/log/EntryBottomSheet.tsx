@@ -126,6 +126,7 @@ function CategoryForm({
     case 'finance':
       return (
         <FinanceForm
+          subcategory={subcategory}
           fields={fields as FinanceFields}
           onChange={(f) => onChange(f)}
         />

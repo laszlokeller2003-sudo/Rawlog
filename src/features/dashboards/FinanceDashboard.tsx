@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { useEntriesStore } from '@/stores/useEntriesStore'
@@ -54,6 +55,22 @@ function EmptyState({ message }: { message: string }) {
 }
 
 const PIE_COLORS: Record<string, string> = {
+  'Essen & Trinken': '#F97316',
+  'Restaurant': '#FB923C',
+  'Lebensmittel': '#FBBF24',
+  'Transport': '#3B82F6',
+  'Shopping': '#06B6D4',
+  'Unterhaltung': '#A855F7',
+  'Gesundheit': '#EC4899',
+  'Wohnen': '#14B8A6',
+  'Abonnements': '#8B5CF6',
+  'Reisen': '#0EA5E9',
+  'Bildung': '#22C55E',
+  'Sport': '#10B981',
+  'Körperpflege': '#F472B6',
+  'Technik': '#6366F1',
+  'Sonstiges': '#888888',
+  // legacy
   food: '#F97316',
   transport: '#3B82F6',
   entertainment: '#A855F7',
@@ -206,6 +223,28 @@ export function FinanceDashboard() {
     0
   )
 
+  // 14-day daily spend vs budget
+  const daily14Data = useMemo(() => {
+    const days: Array<{ label: string; spend: number }> = []
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().slice(0, 10)
+      const daySpend = financeEntries
+        .filter((e) => e.subcategory !== 'Einnahme' && e.timestamp.startsWith(dateStr))
+        .reduce((sum, e) => sum + Math.abs((e.fields as FinanceFields).amount ?? 0), 0)
+      days.push({ label: d.getDate().toString(), spend: parseFloat(daySpend.toFixed(2)) })
+    }
+    return days
+  }, [financeEntries])
+
+  // Impulse buy stats this month
+  const impulseBuys = useMemo(() => {
+    const items = thisMonthEntries.filter((e) => (e.fields as FinanceFields).impulseBuy === true)
+    const total = items.reduce((sum, e) => sum + Math.abs((e.fields as FinanceFields).amount ?? 0), 0)
+    return { count: items.length, total }
+  }, [thisMonthEntries])
+
   const netWorth =
     (parseFloat(assets) || 0) - (parseFloat(debts) || 0)
 
@@ -295,6 +334,48 @@ export function FinanceDashboard() {
           </ResponsiveContainer>
         </Card>
       </div>
+
+      {/* 14-Day Daily Spend vs Budget */}
+      <div>
+        <SectionHeader title={profile.dailyBudget ? `Tagesausgaben vs ${formatCurrency(profile.dailyBudget, currency)} Budget` : 'Tagesausgaben (14 Tage)'} />
+        <Card>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={daily14Data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
+              <XAxis dataKey="label" tick={{ fill: '#888888', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#888888', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip {...tooltipStyle} formatter={(v: any) => formatCurrency(v, currency)} />
+              <Bar dataKey="spend" name="Ausgaben" radius={[2, 2, 0, 0]}>
+                {daily14Data.map((d, i) => (
+                  <Cell key={i} fill={profile.dailyBudget && d.spend > profile.dailyBudget ? '#FF2020' : '#22C55E'} />
+                ))}
+              </Bar>
+              {profile.dailyBudget && (
+                <ReferenceLine y={profile.dailyBudget} stroke="#EAB308" strokeDasharray="4 2" label={{ value: 'Budget', fill: '#EAB308', fontSize: 10 }} />
+              )}
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      {/* Impulse Buys */}
+      {impulseBuys.count > 0 && (
+        <div>
+          <SectionHeader title="Impulskäufe diesen Monat" />
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>Anzahl</div>
+                <div className="font-mono font-bold text-2xl" style={{ color: '#FF2020' }}>{impulseBuys.count}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>Gesamt</div>
+                <div className="font-mono font-bold text-2xl" style={{ color: '#FF2020' }}>{formatCurrency(impulseBuys.total, currency)}</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Spending by Category Pie */}
       {spendingByTag.length > 0 && (
