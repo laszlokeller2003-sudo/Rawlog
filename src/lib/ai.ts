@@ -1,6 +1,33 @@
 import type { Insight } from '@/types'
 import { generateId } from '@/lib/utils'
 
+// Distinguishable error codes surfaced by the ai-chat Edge Function so the UI
+// can eventually react differently (e.g. "missing_api_key" vs "rate_limited")
+// instead of always showing the same generic message.
+export class AiRequestError extends Error {
+  code: string
+  status: number
+  constructor(message: string, code: string, status: number) {
+    super(message)
+    this.name = 'AiRequestError'
+    this.code = code
+    this.status = status
+  }
+}
+
+async function toAiRequestError(res: Response): Promise<AiRequestError> {
+  let code = 'unknown'
+  let message = `Request failed: ${res.status}`
+  try {
+    const body = await res.json()
+    if (typeof body?.code === 'string') code = body.code
+    if (typeof body?.error === 'string') message = body.error
+  } catch {
+    // Non-JSON error body — keep the defaults
+  }
+  return new AiRequestError(message, code, res.status)
+}
+
 const EDGE_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`
   : null
@@ -72,7 +99,7 @@ export async function generateInsights(dataContext: string): Promise<Insight[]> 
       body: JSON.stringify({ type: 'insights', data: dataContext }),
     })
 
-    if (!res.ok) throw new Error(`AI request failed: ${res.status}`)
+    if (!res.ok) throw await toAiRequestError(res)
 
     const data = (await res.json()) as Insight[] | { insights?: Insight[] }
     return Array.isArray(data) ? data : (data.insights ?? [])
@@ -103,7 +130,7 @@ export async function streamChat(
     body: JSON.stringify({ type: 'chat', messages, data: dataContext }),
   })
 
-  if (!res.ok) throw new Error(`Chat request failed: ${res.status}`)
+  if (!res.ok) throw await toAiRequestError(res)
 
   const reader = res.body?.getReader()
   const decoder = new TextDecoder()

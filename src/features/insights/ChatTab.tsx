@@ -77,7 +77,8 @@ export function ChatTab() {
       await streamChat(allMessages, dataContext, (chunk) => {
         appendToMessage(assistantMsg.id, chunk)
       })
-    } catch {
+    } catch (err) {
+      console.error('[Chat] streamChat error:', err)
       toast.error('Chat failed. Please try again.')
       updateMessage(assistantMsg.id, { content: 'Sorry, something went wrong. Please try again.' })
     } finally {

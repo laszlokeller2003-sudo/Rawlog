@@ -16,6 +16,71 @@ Be direct, unfiltered, and data-driven. Never be vague. Call out patterns, corre
 When giving insights, always reference specific numbers from the user's data.
 Format responses in clear, scannable markdown when appropriate.`
 
+// Distinguishable error codes returned to the frontend so the UI can react
+// differently (e.g. "add billing" for rate limits vs "contact support" for
+// missing_api_key) instead of always showing the same generic message.
+type ErrorCode = 'missing_api_key' | 'invalid_api_key' | 'rate_limited' | 'overloaded' | 'anthropic_error' | 'network_error' | 'unknown'
+
+class AnthropicCallError extends Error {
+  code: ErrorCode
+  status: number
+  constructor(code: ErrorCode, status: number, message: string) {
+    super(message)
+    this.code = code
+    this.status = status
+  }
+}
+
+function errorTypeToCode(errorType: string | undefined, status: number): ErrorCode {
+  if (status === 401 || status === 403) return 'invalid_api_key'
+  if (status === 429 || errorType === 'rate_limit_error') return 'rate_limited'
+  if (status === 529 || errorType === 'overloaded_error') return 'overloaded'
+  return 'anthropic_error'
+}
+
+function jsonError(code: ErrorCode, message: string, status: number) {
+  return new Response(JSON.stringify({ error: message, code }), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  })
+}
+
+// Calls the Anthropic Messages API and returns the raw Response on success.
+// On failure, logs the real status/type/message to the Edge Function logs
+// and throws an AnthropicCallError carrying a code the frontend can branch on.
+async function callAnthropic(body: unknown): Promise<Response> {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    const rawBody = await res.text()
+    let errorType: string | undefined
+    let errorMessage = rawBody
+    try {
+      const parsed = JSON.parse(rawBody)
+      errorType = parsed?.error?.type
+      errorMessage = parsed?.error?.message ?? rawBody
+    } catch {
+      // Anthropic returned a non-JSON error body — keep the raw text
+    }
+
+    console.error(
+      `[ai-chat] Anthropic API error — status=${res.status} type=${errorType ?? 'unknown'} message=${errorMessage}`
+    )
+
+    throw new AnthropicCallError(errorTypeToCode(errorType, res.status), res.status, errorMessage)
+  }
+
+  return res
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
@@ -25,10 +90,8 @@ serve(async (req: Request) => {
     const { type, messages, data, prompt } = await req.json()
 
     if (!ANTHROPIC_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }),
-        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-      )
+      console.error('[ai-chat] ANTHROPIC_API_KEY is not set — configure it via `supabase secrets set`')
+      return jsonError('missing_api_key', 'ANTHROPIC_API_KEY not configured', 500)
     }
 
     // ── Insights generation ──────────────────────────────────
@@ -49,18 +112,10 @@ Respond ONLY with a valid JSON array. No markdown code blocks. Each object:
   "generatedAt": "${new Date().toISOString()}"
 }`
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 2000,
-          messages: [{ role: 'user', content: insightPrompt }],
-        }),
+      const res = await callAnthropic({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: insightPrompt }],
       })
 
       const result = await res.json()
@@ -83,18 +138,10 @@ ${prompt || 'Generate a comprehensive daily life report covering: overall score,
 
 Format the report in clean markdown with sections.`
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 3000,
-          messages: [{ role: 'user', content: reportPrompt }],
-        }),
+      const res = await callAnthropic({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: reportPrompt }],
       })
 
       const result = await res.json()
@@ -112,32 +159,16 @@ Format the report in clean markdown with sections.`
 CURRENT USER DATA:
 ${data}`
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 1500,
-          system: systemWithData,
-          stream: true,
-          messages: messages.map((m: { role: string; content: string }) => ({
-            role: m.role === 'user' ? 'user' : 'assistant',
-            content: m.content,
-          })),
-        }),
+      const res = await callAnthropic({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1500,
+        system: systemWithData,
+        stream: true,
+        messages: messages.map((m: { role: string; content: string }) => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.content,
+        })),
       })
-
-      if (!res.ok) {
-        const err = await res.text()
-        return new Response(JSON.stringify({ error: err }), {
-          status: 502,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        })
-      }
 
       // Stream through
       return new Response(res.body, {
@@ -149,15 +180,19 @@ ${data}`
       })
     }
 
-    return new Response(JSON.stringify({ error: 'Unknown type' }), {
-      status: 400,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    })
+    return jsonError('unknown', 'Unknown type', 400)
   } catch (err) {
+    if (err instanceof AnthropicCallError) {
+      return jsonError(err.code, err.message, err.status)
+    }
+
+    // Network failures (DNS, TLS, connection reset) surface as a plain
+    // TypeError from fetch — distinguish them from unexpected bugs.
+    const isNetworkError = err instanceof TypeError
     const message = err instanceof Error ? err.message : String(err)
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    })
+
+    console.error(`[ai-chat] Unhandled error — ${isNetworkError ? 'network_error' : 'unknown'}:`, err)
+
+    return jsonError(isNetworkError ? 'network_error' : 'unknown', message, isNetworkError ? 502 : 500)
   }
 })
