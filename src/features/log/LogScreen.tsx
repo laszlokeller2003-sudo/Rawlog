@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { DEFAULT_CATEGORIES } from '@/lib/categories'
+import { DEFAULT_CATEGORIES, getCategoryName } from '@/lib/categories'
 import { EntryCard } from './EntryCard'
 import { EntryBottomSheet } from './EntryBottomSheet'
 import { SearchResults } from './SearchResults'
 import { EmptyState } from '@/components/EmptyState'
 
 export function LogScreen() {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const openEntrySheet = useUIStore((s) => s.openEntrySheet)
   const entries = useEntriesStore((s) => s.entries)
@@ -43,7 +45,7 @@ export function LogScreen() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search entries..."
+            placeholder={t('log.searchPlaceholder')}
             className="flex-1 text-sm bg-transparent"
             style={{ color: 'var(--text-primary)' }}
           />
@@ -68,7 +70,7 @@ export function LogScreen() {
           {/* Category quick-log grid */}
           <div className="px-4 pt-4 pb-2">
             <div className="section-header">
-              <span className="section-title">Quick Log</span>
+              <span className="section-title">{t('home.quickLog')}</span>
             </div>
             <div className="quick-log-grid">
               {visibleCategories.map((cat) => (
@@ -87,16 +89,16 @@ export function LogScreen() {
                   <span className="quick-log-label" style={{ color: '#F5F5F5' }}>
                     {/* Shorten long names for grid display */}
                     {cat.id === 'substances'
-                      ? 'Subst.'
+                      ? t('log.shortSubstances')
                       : cat.id === 'intimacy'
-                      ? 'Intimacy'
+                      ? t('log.shortIntimacy')
                       : cat.id === 'nutrition'
-                      ? 'Food'
+                      ? t('log.shortNutrition')
                       : cat.id === 'finance'
-                      ? 'Money'
+                      ? t('log.shortFinance')
                       : cat.id === 'social'
-                      ? 'Social'
-                      : cat.name.split(' ')[0]}
+                      ? t('log.shortSocial')
+                      : getCategoryName(cat, profile.language).split(' ')[0]}
                   </span>
                 </button>
               ))}
@@ -108,14 +110,14 @@ export function LogScreen() {
           {/* Recent Entries */}
           <div className="px-4 pb-2">
             <div className="section-header">
-              <span className="section-title">Recent Entries</span>
+              <span className="section-title">{t('log.recentEntries')}</span>
             </div>
           </div>
 
           {recentEntries.length === 0 ? (
             <EmptyState
               icon="📋"
-              message="No entries yet. Tap a category above to log your first entry."
+              message={t('log.noEntriesMessage')}
             />
           ) : (
             <AnimatePresence initial={false}>

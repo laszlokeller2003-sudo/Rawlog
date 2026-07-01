@@ -1,24 +1,26 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/useUIStore'
 import { InsightsTab } from './InsightsTab'
 import { ChatTab } from './ChatTab'
 import { PlanTab } from './PlanTab'
 
-const TABS = [
-  { id: 'insights' as const, label: 'Insights' },
-  { id: 'chat' as const, label: 'Chat' },
-  { id: 'plan' as const, label: 'Plan' },
-]
-
 export function InsightsScreen() {
+  const { t } = useTranslation()
   const { insightsActiveTab, setInsightsActiveTab } = useUIStore()
+
+  const TABS = [
+    { id: 'insights' as const, label: t('ai.tabs.insights') },
+    { id: 'chat' as const, label: t('ai.tabs.chat') },
+    { id: 'plan' as const, label: t('ai.tabs.plan') },
+  ]
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 pt-4 pb-0 flex-shrink-0">
-        <h1 className="font-heading font-bold text-xl text-text-primary mb-4">AI PA</h1>
+        <h1 className="font-heading font-bold text-xl text-text-primary mb-4">{t('ai.heading')}</h1>
 
         {/* Tab pills */}
         <div className="flex gap-2 mb-0">

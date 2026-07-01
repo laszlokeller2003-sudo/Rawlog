@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { useHabitsStore } from '@/stores/useHabitsStore'
 import { getCategoryById } from '@/lib/categories'
 import { toDateString } from '@/lib/utils'
@@ -24,6 +25,7 @@ function generateLast90Days(): string[] {
 }
 
 export function HabitCard({ habit }: HabitCardProps) {
+  const { t } = useTranslation()
   const { checkInHabit, uncheckinHabit, isCompleted, deleteHabit, getCompletedDates } = useHabitsStore()
   const category = getCategoryById(habit.category)
   const completedDates = getCompletedDates(habit.id)
@@ -52,14 +54,14 @@ export function HabitCard({ habit }: HabitCardProps) {
     } else {
       checkInHabit(habit.id, today)
       hapticSuccess()
-      toast.success('Habit checked in! 🔥', { id: habit.id })
+      toast.success(t('habits.habitCheckedInToast'), { id: habit.id })
     }
   }
 
   const handleDelete = () => {
-    if (window.confirm(`Delete "${habit.name}"?`)) {
+    if (window.confirm(t('habits.deleteHabitConfirm', { name: habit.name }))) {
       deleteHabit(habit.id)
-      toast.success('Habit deleted')
+      toast.success(t('habits.habitDeletedToast'))
     }
   }
 
@@ -75,7 +77,7 @@ export function HabitCard({ habit }: HabitCardProps) {
       <button
         className="absolute top-3 right-3 text-text-muted hover:text-text-primary transition-colors p-1"
         onClick={handleDelete}
-        aria-label="Delete habit"
+        aria-label={t('habits.deleteHabitAria')}
       >
         <X size={14} />
       </button>
@@ -94,9 +96,9 @@ export function HabitCard({ habit }: HabitCardProps) {
 
       {/* Streak row */}
       <div className="flex items-center gap-3 mb-3">
-        <span className="streak-pill">🔥 {habit.currentStreak} days</span>
+        <span className="streak-pill">{t('habits.streakDays', { count: habit.currentStreak })}</span>
         <span className="text-text-muted text-xs">
-          Longest: {habit.longestStreak}d
+          {t('habits.longestStreak', { count: habit.longestStreak })}
         </span>
       </div>
 
@@ -135,11 +137,11 @@ export function HabitCard({ habit }: HabitCardProps) {
               : 'border-accent-red bg-accent-red text-white'
           }`}
         >
-          {todayDone ? 'Done ✓' : 'Mark done'}
+          {todayDone ? t('habits.doneCheck') : t('habits.markDone')}
         </motion.button>
 
         <span className="text-xs text-text-muted font-mono">
-          {weekCompletionPct}% this week
+          {t('habits.weekPercent', { percent: weekCompletionPct })}
         </span>
       </div>
     </motion.div>

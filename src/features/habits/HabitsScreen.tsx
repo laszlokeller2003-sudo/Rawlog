@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/stores/useUIStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useHabitsStore } from '@/stores/useHabitsStore'
@@ -11,6 +12,7 @@ import { CreateHabitModal } from './CreateHabitModal'
 import { CreateGoalModal } from './CreateGoalModal'
 
 export function HabitsScreen() {
+  const { t } = useTranslation()
   const { habitsActiveTab, setHabitsActiveTab, openPaywall } = useUIStore()
   const { profile } = useProfileStore()
   const { habits } = useHabitsStore()
@@ -41,7 +43,7 @@ export function HabitsScreen() {
     <div className="flex flex-col min-h-full bg-bg-base text-text-primary pb-24 relative">
       {/* Header with sticky tabs */}
       <div className="sticky top-0 z-20 bg-bg-base pt-6 px-4 pb-2 border-b border-border">
-        <h2 className="font-heading font-bold text-2xl mb-4">Habits & Goals</h2>
+        <h2 className="font-heading font-bold text-2xl mb-4">{t('habits.title')}</h2>
 
         {/* Tabs Bar */}
         <div className="flex gap-2">
@@ -54,7 +56,7 @@ export function HabitsScreen() {
                 : 'bg-bg-surface border-border text-text-secondary hover:text-text-primary'
             }`}
           >
-            Habits
+            {t('habits.tabHabits')}
           </button>
           <button
             type="button"
@@ -65,7 +67,7 @@ export function HabitsScreen() {
                 : 'bg-bg-surface border-border text-text-secondary hover:text-text-primary'
             }`}
           >
-            Goals
+            {t('habits.tabGoals')}
           </button>
         </div>
       </div>
@@ -95,7 +97,7 @@ export function HabitsScreen() {
         whileTap={{ scale: 0.9 }}
         onClick={handlePlusClick}
         className="fixed bottom-24 right-4 w-12 h-12 rounded-full bg-accent-red flex items-center justify-center text-white shadow-lg cursor-pointer z-30"
-        aria-label={`Add new ${habitsActiveTab === 'habits' ? 'habit' : 'goal'}`}
+        aria-label={habitsActiveTab === 'habits' ? t('habits.addNewHabitAria') : t('habits.addNewGoalAria')}
       >
         <Plus size={24} />
       </motion.button>

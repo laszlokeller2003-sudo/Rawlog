@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { AnimatePresence, motion } from 'framer-motion'
+import i18n from '@/i18n'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { useEntriesStore } from '@/stores/useEntriesStore'
@@ -121,6 +122,15 @@ export default function App() {
     document.body.style.background = '#080808'
     document.documentElement.style.background = '#080808'
   }, [])
+
+  // Sync i18next with the user's saved language preference — covers app
+  // start (already saved), onboarding selection, and the profile toggle,
+  // since all three write to the same profile.language field.
+  useEffect(() => {
+    if (i18n.language !== profile.language) {
+      i18n.changeLanguage(profile.language)
+    }
+  }, [profile.language])
 
   // Auto-activate default categories if they are missing in profile
   useEffect(() => {

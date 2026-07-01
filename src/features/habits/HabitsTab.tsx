@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useHabitsStore } from '@/stores/useHabitsStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useUIStore } from '@/stores/useUIStore'
@@ -10,6 +11,7 @@ interface HabitsTabProps {
 }
 
 export function HabitsTab({ onAddHabit }: HabitsTabProps) {
+  const { t } = useTranslation()
   const { habits } = useHabitsStore()
   const { profile } = useProfileStore()
   const { openPaywall } = useUIStore()
@@ -24,17 +26,17 @@ export function HabitsTab({ onAddHabit }: HabitsTabProps) {
           onClick={() => openPaywall('unlimited_habits')}
           className="mb-4 p-4 rounded-lg bg-accent-red/10 border border-accent-red/20 text-center cursor-pointer transition-all hover:bg-accent-red/15"
         >
-          <p className="text-sm font-semibold text-accent-red">Upgrade to Premium for Unlimited Habits</p>
-          <p className="text-xs text-[#888888] mt-1">You have reached the free limit of 3 habits. Tap to unlock.</p>
+          <p className="text-sm font-semibold text-accent-red">{t('habits.upgradeUnlimitedHabits')}</p>
+          <p className="text-xs text-[#888888] mt-1">{t('habits.freeLimitHabits')}</p>
         </div>
       )}
 
       {habits.length === 0 ? (
         <EmptyState
-          message="No habits yet. Build the life you want."
+          message={t('habits.noHabitsMessage')}
           icon="🎯"
           action={{
-            label: 'Create a Habit',
+            label: t('habits.createHabit'),
             onClick: onAddHabit,
           }}
         />

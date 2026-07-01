@@ -3,7 +3,7 @@ import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, Camera, Check, Cloud } from 'lucide-react'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { DEFAULT_CATEGORIES } from '@/lib/categories'
+import { DEFAULT_CATEGORIES, getCategoryName } from '@/lib/categories'
 import { cn } from '@/lib/utils'
 import { signUpWithEmail, signInWithEmail } from '@/lib/sync'
 import toast from 'react-hot-toast'
@@ -269,7 +269,7 @@ function ProfileScreen({
             style={{ transition: 'border-color 150ms' }}
           >
             {photoUrl ? (
-              <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+              <img src={photoUrl} alt={t('onboarding.profile.photo')} className="w-full h-full object-cover" />
             ) : (
               <Camera size={28} color="#444444" />
             )}
@@ -411,6 +411,7 @@ function LifestyleScreen({
   initialData: LifestyleData
 }) {
   const { t } = useTranslation()
+  const { profile } = useProfileStore()
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>(
     initialData.selectedCategories
   )
@@ -483,7 +484,7 @@ function LifestyleScreen({
                       lineHeight: 1.2,
                     }}
                   >
-                    {cat.name}
+                    {getCategoryName(cat, profile.language)}
                   </span>
                   {isSelected && (
                     <div
@@ -729,6 +730,7 @@ function ReadyScreen({
   onStart: () => void
 }) {
   const { t } = useTranslation()
+  const { profile } = useProfileStore()
 
   const previewCats = DEFAULT_CATEGORIES.filter((c) => selectedCategories.includes(c.id)).slice(0, 3)
 
@@ -815,7 +817,7 @@ function ReadyScreen({
                   }}
                 >
                   <span>{cat.icon}</span>
-                  <span>{cat.name}</span>
+                  <span>{getCategoryName(cat, profile.language)}</span>
                 </div>
               ))}
             </motion.div>
@@ -841,6 +843,7 @@ function ReadyScreen({
 // ─── Main Onboarding Flow ─────────────────────────────────────────────────────
 
 export function OnboardingFlow() {
+  const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
   const { profile, updateProfile, completeOnboarding } = useProfileStore()
@@ -908,9 +911,9 @@ export function OnboardingFlow() {
         try {
           await signUpWithEmail(data.email, data.password, profileData.name)
             .catch(() => signInWithEmail(data.email, data.password))
-          toast.success('Account created & syncing!')
+          toast.success(t('onboarding.privacy.signupSuccessToast'))
         } catch {
-          toast.error('Could not create account — continuing offline')
+          toast.error(t('onboarding.privacy.signupFailedToast'))
         }
       }
       goNext()

@@ -71,17 +71,17 @@ export function DashboardsScreen() {
                 <Lock size={28} className="text-accent-red" />
               </div>
               <h3 className="font-heading font-bold text-lg mb-2">
-                Unlock {activeTab.label} Dashboard
+                {t('dashboards.unlockTitle', { name: activeTab.label })}
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed mb-6 max-w-xs">
-                Visualize trends, correlation scores, and history of your {activeTab.label.toLowerCase()} entries with LYFE Premium.
+                {t('dashboards.unlockBody', { name: profile.language === 'de' ? activeTab.label : activeTab.label.toLowerCase() })}
               </p>
               <button
                 type="button"
                 onClick={() => openPaywall(activeTab.id)}
                 className="btn-primary w-full"
               >
-                Upgrade to Premium
+                {t('dashboards.upgradeToPremium')}
               </button>
             </motion.div>
           ) : (

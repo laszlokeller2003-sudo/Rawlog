@@ -13,6 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { toDateString } from '@/lib/utils'
 import type { SocialFields, IntimacyFields } from '@/types'
@@ -61,6 +62,7 @@ function heatmapColor(count: number): string {
 }
 
 export function RelationshipsDashboard() {
+  const { t } = useTranslation()
   const { entries } = useEntriesStore()
 
   const socialEntries = useMemo(() => entries.filter((e) => e.category === 'social'), [entries])
@@ -107,11 +109,11 @@ export function RelationshipsDashboard() {
       if (ea && ea in counts) counts[ea as keyof typeof counts]++
     })
     return [
-      { name: 'Drained', value: counts.drained, color: '#FF2020' },
-      { name: 'Neutral', value: counts.neutral, color: '#888888' },
-      { name: 'Energized', value: counts.energized, color: '#22C55E' },
+      { name: t('dashboards.relationships.drained'), value: counts.drained, color: '#FF2020' },
+      { name: t('dashboards.relationships.neutral'), value: counts.neutral, color: '#888888' },
+      { name: t('dashboards.relationships.energized'), value: counts.energized, color: '#22C55E' },
     ].filter((d) => d.value > 0)
-  }, [socialEntries])
+  }, [socialEntries, t])
 
   // Social Heatmap (90 days)
   const heatmapData = useMemo(() => {
@@ -177,10 +179,10 @@ export function RelationshipsDashboard() {
     >
       {/* Time with People */}
       <div>
-        <SectionHeader title="Time with People" />
+        <SectionHeader title={t('dashboards.relationships.timeWithPeople')} />
         <Card>
           {timeWithPeople.length === 0 ? (
-            <EmptyState icon="👥" message="Log social entries with 'who' field to see this" />
+            <EmptyState icon="👥" message={t('dashboards.relationships.logWhoHint')} />
           ) : (
             <ResponsiveContainer width="100%" height={Math.max(120, timeWithPeople.length * 32)}>
               <BarChart
@@ -205,7 +207,7 @@ export function RelationshipsDashboard() {
                   width={70}
                 />
                 <Tooltip {...tooltipStyle} />
-                <Bar dataKey="count" fill="#06B6D4" radius={[0, 2, 2, 0]} name="Times" />
+                <Bar dataKey="count" fill="#06B6D4" radius={[0, 2, 2, 0]} name={t('dashboards.relationships.times') as string} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -214,10 +216,10 @@ export function RelationshipsDashboard() {
 
       {/* Energy Balance */}
       <div>
-        <SectionHeader title="Energy After Socializing" />
+        <SectionHeader title={t('dashboards.relationships.energyAfterSocializing')} />
         <Card>
           {energyBalance.length === 0 ? (
-            <EmptyState icon="⚡" message="No energy data from social entries yet" />
+            <EmptyState icon="⚡" message={t('dashboards.relationships.noEnergyData')} />
           ) : (
             <div className="flex items-center justify-around">
               <ResponsiveContainer width={160} height={160}>
@@ -248,7 +250,7 @@ export function RelationshipsDashboard() {
 
       {/* Social Heatmap (90 days) */}
       <div>
-        <SectionHeader title="Social Activity (90d)" />
+        <SectionHeader title={t('dashboards.relationships.socialActivity90d')} />
         <Card>
           <div
             style={{
@@ -273,37 +275,37 @@ export function RelationshipsDashboard() {
             ))}
           </div>
           <div className="flex items-center gap-1 mt-2 justify-end">
-            <span style={{ fontSize: 9, color: '#444444' }}>Less</span>
+            <span style={{ fontSize: 9, color: '#444444' }}>{t('stats.less')}</span>
             {[0, 1, 3, 5, 7].map((v) => (
               <div key={v} style={{ width: 7, height: 7, borderRadius: 1, background: heatmapColor(v) }} />
             ))}
-            <span style={{ fontSize: 9, color: '#444444' }}>More</span>
+            <span style={{ fontSize: 9, color: '#444444' }}>{t('stats.more')}</span>
           </div>
         </Card>
       </div>
 
       {/* Social Balance */}
       <div>
-        <SectionHeader title="Social Balance This Month" />
+        <SectionHeader title={t('dashboards.relationships.socialBalanceThisMonth')} />
         <div className="grid grid-cols-2 gap-2">
           <Card className="text-center p-3">
             <div className="font-mono text-2xl font-bold" style={{ color: '#06B6D4' }}>
               {socialWithOthers}
             </div>
-            <div className="text-xs mt-1" style={{ color: '#444444' }}>Social Events</div>
+            <div className="text-xs mt-1" style={{ color: '#444444' }}>{t('dashboards.relationships.socialEvents')}</div>
           </Card>
           <Card className="text-center p-3">
             <div className="font-mono text-2xl font-bold" style={{ color: '#A855F7' }}>
               {aloneTimeCount}
             </div>
-            <div className="text-xs mt-1" style={{ color: '#444444' }}>Alone Time</div>
+            <div className="text-xs mt-1" style={{ color: '#444444' }}>{t('dashboards.relationships.aloneTime')}</div>
           </Card>
         </div>
         {totalSocialCount > 0 && (
           <div className="mt-2">
             <div className="flex justify-between mb-1">
-              <span className="text-xs" style={{ color: '#888888' }}>Social</span>
-              <span className="text-xs" style={{ color: '#888888' }}>Alone</span>
+              <span className="text-xs" style={{ color: '#888888' }}>{t('dashboards.relationships.social')}</span>
+              <span className="text-xs" style={{ color: '#888888' }}>{t('dashboards.relationships.alone')}</span>
             </div>
             <div className="h-2 rounded-full overflow-hidden flex" style={{ background: '#242424' }}>
               <div
@@ -327,20 +329,20 @@ export function RelationshipsDashboard() {
 
       {/* Intimacy Overview */}
       <div>
-        <SectionHeader title="Intimacy Overview" />
+        <SectionHeader title={t('dashboards.relationships.intimacyOverview')} />
         <Card className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="text-center">
               <div className="font-mono text-2xl font-bold" style={{ color: '#FF2020' }}>
                 {thisMonthIntimacy.length}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#444444' }}>Entries this month</div>
+              <div className="text-xs mt-1" style={{ color: '#444444' }}>{t('dashboards.relationships.entriesThisMonth')}</div>
             </div>
             <div className="text-center">
               <div className="font-mono text-2xl font-bold" style={{ color: '#EAB308' }}>
                 {avgIntimacyRating !== null ? avgIntimacyRating : '—'}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#444444' }}>Avg Rating</div>
+              <div className="text-xs mt-1" style={{ color: '#444444' }}>{t('dashboards.relationships.avgRating')}</div>
             </div>
           </div>
           <div
@@ -349,7 +351,7 @@ export function RelationshipsDashboard() {
           >
             <ShieldCheck size={14} style={{ color: '#22C55E', flexShrink: 0 }} />
             <p className="text-xs" style={{ color: '#444444' }}>
-              This data is private and stays on your device
+              {t('dashboards.relationships.privacyNote')}
             </p>
           </div>
         </Card>

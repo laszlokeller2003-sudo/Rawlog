@@ -1,48 +1,66 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { X, Check, Crown, Zap, Shield, RefreshCw } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { isTrialActive } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
-const FEATURES = [
-  { icon: '📊', text: 'Full stats history (all time)' },
-  { icon: '🎯', text: 'All 4 specialized dashboards' },
-  { icon: '♾️', text: 'Unlimited habits + goals' },
-  { icon: '🤖', text: 'AI PA Chat (unlimited messages)' },
-  { icon: '💡', text: 'AI Insights + auto reports' },
-  { icon: '☁️', text: 'Cloud sync across devices' },
-  { icon: '📤', text: 'Data export (JSON + CSV)' },
-  { icon: '🔒', text: 'App lock (PIN)' },
-]
-
-const PLANS = [
-  {
-    id: 'monthly',
-    label: 'Monthly',
-    price: '4.99€',
-    period: '/month',
-    priceId: 'price_monthly_lyfe',
-    highlight: false,
-    badge: null,
-  },
-  {
-    id: 'yearly',
-    label: 'Yearly',
-    price: '39.99€',
-    period: '/year',
-    priceId: 'price_yearly_lyfe',
-    highlight: true,
-    badge: 'Save 33%',
-  },
+const FEATURE_ICONS_KEYS: Array<{ icon: string; key: string }> = [
+  { icon: '📊', key: 'paywall.features.stats' },
+  { icon: '🎯', key: 'paywall.features.dashboards' },
+  { icon: '♾️', key: 'paywall.features.habits' },
+  { icon: '🤖', key: 'paywall.features.chat' },
+  { icon: '💡', key: 'paywall.features.insights' },
+  { icon: '☁️', key: 'paywall.features.sync' },
+  { icon: '📤', key: 'paywall.features.export' },
+  { icon: '🔒', key: 'paywall.features.lock' },
 ]
 
 export function PaywallModal() {
+  const { t } = useTranslation()
   const { isPaywallOpen, paywallFeature, closePaywall } = useUIStore()
   const { profile, updateProfile } = useProfileStore()
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly')
   const [isLoading, setIsLoading] = useState(false)
+
+  const PLANS = [
+    {
+      id: 'monthly',
+      label: t('paywall.monthly'),
+      price: '4.99€',
+      period: '/month',
+      priceId: 'price_monthly_lyfe',
+      highlight: false,
+      badge: null as string | null,
+    },
+    {
+      id: 'yearly',
+      label: t('paywall.yearly'),
+      price: '39.99€',
+      period: '/year',
+      priceId: 'price_yearly_lyfe',
+      highlight: true,
+      badge: t('paywall.saveBadge') as string | null,
+    },
+  ]
+
+  // openPaywall() callers pass either a dashboard id or a raw English phrase —
+  // map the known values to translated labels instead of leaking English/ids
+  // into an otherwise localized sentence.
+  const FEATURE_LABEL_KEYS: Record<string, string> = {
+    finance: 'dashboards.finance',
+    body: 'dashboards.body',
+    relationships: 'dashboards.relations',
+    productivity: 'dashboards.work',
+    'unlimited AI chat': 'paywall.featureUnlimitedChat',
+    unlimited_habits: 'paywall.featureUnlimitedHabits',
+    unlimited_goals: 'paywall.featureUnlimitedGoals',
+  }
+  const translatedFeature = paywallFeature
+    ? t(FEATURE_LABEL_KEYS[paywallFeature] ?? '', { defaultValue: paywallFeature })
+    : null
 
   const trialActive = isTrialActive(profile.trialStartedAt)
   const trialDaysLeft = profile.trialStartedAt
@@ -81,9 +99,9 @@ export function PaywallModal() {
       await new Promise((r) => setTimeout(r, 800))
       updateProfile({ isPremium: true })
       closePaywall()
-      toast.success('🎉 Premium activated!')
+      toast.success(t('paywall.premiumActivated'))
     } catch (err) {
-      toast.error('Payment failed. Try again.')
+      toast.error(t('paywall.paymentFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -93,7 +111,7 @@ export function PaywallModal() {
     setIsLoading(true)
     try {
       await new Promise((r) => setTimeout(r, 600))
-      toast('No purchase found to restore.', { icon: '🔄' })
+      toast(t('paywall.noPurchaseFound'), { icon: '🔄' })
     } finally {
       setIsLoading(false)
     }
@@ -123,7 +141,7 @@ export function PaywallModal() {
               <button
                 onClick={closePaywall}
                 className="w-8 h-8 flex items-center justify-center text-[#888888] hover:text-[#F5F5F5] transition-colors"
-                aria-label="Close"
+                aria-label={t('paywall.close') as string}
               >
                 <X size={20} />
               </button>
@@ -134,7 +152,7 @@ export function PaywallModal() {
               <div className="mb-4 px-4 py-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
                 <Zap size={14} className="text-yellow-500 flex-shrink-0" />
                 <p className="text-yellow-400 text-xs font-semibold">
-                  Free trial: {trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'} left
+                  {t('paywall.trialLeft', { count: trialDaysLeft })}
                 </p>
               </div>
             )}
@@ -143,21 +161,21 @@ export function PaywallModal() {
             <div className="mb-5 text-center">
               <Crown size={40} className="text-accent-red mx-auto mb-3" />
               <h1 className="font-heading font-extrabold text-[28px] leading-none tracking-tight text-[#F5F5F5] mb-2">
-                LYFE Premium
+                {t('paywall.title')}
               </h1>
               <p className="text-[#888888] text-sm leading-relaxed">
-                {paywallFeature
-                  ? `Unlock ${paywallFeature} and everything else.`
-                  : 'The unfiltered life OS. No limits.'}
+                {translatedFeature
+                  ? t('paywall.subtitleFeature', { feature: translatedFeature })
+                  : t('paywall.subtitleDefault')}
               </p>
             </div>
 
             {/* Features */}
             <ul className="space-y-2.5 mb-6">
-              {FEATURES.map((f) => (
-                <li key={f.text} className="flex items-center gap-3">
+              {FEATURE_ICONS_KEYS.map((f) => (
+                <li key={f.key} className="flex items-center gap-3">
                   <span className="text-base w-5 text-center flex-shrink-0">{f.icon}</span>
-                  <span className="text-[#F5F5F5] text-sm">{f.text}</span>
+                  <span className="text-[#F5F5F5] text-sm">{t(f.key)}</span>
                   <Check size={14} className="text-green-500 flex-shrink-0 ml-auto" />
                 </li>
               ))}
@@ -201,7 +219,7 @@ export function PaywallModal() {
               ) : (
                 <>
                   <Crown size={18} />
-                  Start Premium
+                  {t('paywall.startPremium')}
                 </>
               )}
             </button>
@@ -211,20 +229,20 @@ export function PaywallModal() {
               disabled={isLoading}
               className="w-full text-[#888888] text-sm py-2 hover:text-[#F5F5F5] transition-colors"
             >
-              Restore purchase
+              {t('paywall.restorePurchase')}
             </button>
 
             {/* Trust signal */}
             <div className="flex items-center justify-center gap-2 mt-4">
               <Shield size={12} className="text-[#444444]" />
-              <p className="text-[#444444] text-xs">Cancel anytime. No hidden fees.</p>
+              <p className="text-[#444444] text-xs">{t('paywall.cancelAnytime')}</p>
             </div>
 
             <button
               onClick={closePaywall}
               className="w-full text-[#444444] text-xs py-3 hover:text-[#888888] transition-colors mt-2"
             >
-              Maybe later
+              {t('paywall.maybeLater')}
             </button>
           </motion.div>
         </motion.div>

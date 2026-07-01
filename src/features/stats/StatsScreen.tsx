@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
+import { format } from 'date-fns'
+import { de } from 'date-fns/locale'
 import {
   BarChart,
   Bar,
@@ -15,7 +18,7 @@ import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useHabitsStore } from '@/stores/useHabitsStore'
 import { useUIStore } from '@/stores/useUIStore'
 import { useProfileStore } from '@/stores/useProfileStore'
-import { DEFAULT_CATEGORIES } from '@/lib/categories'
+import { DEFAULT_CATEGORIES, getCategoryName } from '@/lib/categories'
 import { formatCurrency, toDateString } from '@/lib/utils'
 import type { TimeFilter, MoodFields, SleepFields, FinanceFields } from '@/types'
 
@@ -50,16 +53,6 @@ function heatmapColor(count: number): string {
   return '#FF2020'
 }
 
-// ─── Time Filters ─────────────────────────────────────────────────────────────
-const TIME_FILTERS: { value: TimeFilter; label: string }[] = [
-  { value: 'today', label: 'Today' },
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: '3months', label: '3M' },
-  { value: 'year', label: 'Year' },
-  { value: 'all', label: 'All' },
-]
-
 // ─── Empty State ──────────────────────────────────────────────────────────────
 function EmptyState({ message }: { message: string }) {
   return (
@@ -81,10 +74,20 @@ function SectionHeader({ title }: { title: string }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function StatsScreen() {
+  const { t } = useTranslation()
   const { entries, getEntriesInRange } = useEntriesStore()
   const { habits } = useHabitsStore()
   const { statsTimeFilter, setStatsTimeFilter } = useUIStore()
   const { profile } = useProfileStore()
+
+  const TIME_FILTERS: { value: TimeFilter; label: string }[] = [
+    { value: 'today', label: t('stats.filters.today') },
+    { value: 'week', label: t('stats.filters.week') },
+    { value: 'month', label: t('stats.filters.month') },
+    { value: '3months', label: t('stats.filters.threeMonths') },
+    { value: 'year', label: t('stats.filters.year') },
+    { value: 'all', label: t('stats.filters.all') },
+  ]
 
   const { start, end } = useMemo(() => getDateRange(statsTimeFilter), [statsTimeFilter])
   const filteredEntries = useMemo(() => getEntriesInRange(start, end), [getEntriesInRange, start, end])
@@ -175,17 +178,18 @@ export function StatsScreen() {
   // Month labels for heatmap
   const monthLabels = useMemo(() => {
     const labels: Array<{ label: string; col: number }> = []
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const locale = profile.language === 'de' ? { locale: de } : undefined
     let lastMonth = -1
     heatmapData.forEach((d) => {
-      const month = new Date(d.date + 'T00:00:00').getMonth()
+      const date = new Date(d.date + 'T00:00:00')
+      const month = date.getMonth()
       if (month !== lastMonth && d.row === 0) {
-        labels.push({ label: months[month], col: d.col })
+        labels.push({ label: format(date, 'MMM', locale), col: d.col })
         lastMonth = month
       }
     })
     return labels
-  }, [heatmapData])
+  }, [heatmapData, profile.language])
 
   // ── Last 30 Days Bar Chart ──────────────────────────────────────────────────
   const last30DaysData = useMemo(() => {
@@ -217,14 +221,14 @@ export function StatsScreen() {
         const cat = DEFAULT_CATEGORIES.find((c) => c.id === catId)
         return {
           id: catId,
-          name: cat?.name ?? catId,
+          name: cat ? getCategoryName(cat, profile.language) : catId,
           icon: cat?.icon ?? '📌',
           color: cat?.color ?? '#888888',
           count,
           percentage: total > 0 ? Math.round((count / total) * 100) : 0,
         }
       })
-  }, [filteredEntries])
+  }, [filteredEntries, profile.language])
 
   // ── Mood Trend ──────────────────────────────────────────────────────────────
   const moodTrendData = useMemo(() => {
@@ -297,16 +301,16 @@ export function StatsScreen() {
       <div className="px-4 pt-4 pb-24 space-y-6">
         {/* Summary Cards */}
         <div>
-          <SectionHeader title="Overview" />
+          <SectionHeader title={t('stats.overview')} />
           <div className="grid grid-cols-3 gap-2">
-            <SummaryCard value={String(totalEntries)} label="Entries" />
-            <SummaryCard value={String(activeDays)} label="Active Days" />
-            <SummaryCard value={String(bestStreak)} label="Best Streak" />
-            <SummaryCard value={topCategory} label="Top Category" />
-            <SummaryCard value={avgMood !== null ? avgMood : '—'} label="Avg Mood" />
+            <SummaryCard value={String(totalEntries)} label={t('stats.entries')} />
+            <SummaryCard value={String(activeDays)} label={t('stats.activeDays')} />
+            <SummaryCard value={String(bestStreak)} label={t('stats.bestStreak')} />
+            <SummaryCard value={topCategory} label={t('stats.topCategory')} />
+            <SummaryCard value={avgMood !== null ? avgMood : '—'} label={t('stats.avgMood')} />
             <SummaryCard
               value={totalFinance !== null ? formatCurrency(totalFinance, profile.currency) : '—'}
-              label="Finance"
+              label={t('stats.finance')}
               small={totalFinance !== null}
             />
           </div>
@@ -318,7 +322,7 @@ export function StatsScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.05 }}
         >
-          <SectionHeader title="365-Day Activity" />
+          <SectionHeader title={t('stats.activityHeatmap')} />
           <div
             className="rounded-lg p-3 overflow-x-auto"
             style={{ background: '#1C1C1C', border: '1px solid #242424' }}
@@ -368,14 +372,14 @@ export function StatsScreen() {
 
               {/* Legend */}
               <div className="flex items-center gap-1 mt-2 justify-end">
-                <span style={{ fontSize: 9, color: '#444444' }}>Less</span>
+                <span style={{ fontSize: 9, color: '#444444' }}>{t('stats.less')}</span>
                 {[0, 1, 3, 5, 7].map((v) => (
                   <div
                     key={v}
                     style={{ width: 8, height: 8, borderRadius: 1, background: heatmapColor(v) }}
                   />
                 ))}
-                <span style={{ fontSize: 9, color: '#444444' }}>More</span>
+                <span style={{ fontSize: 9, color: '#444444' }}>{t('stats.more')}</span>
               </div>
             </div>
           </div>
@@ -387,7 +391,7 @@ export function StatsScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.1 }}
         >
-          <SectionHeader title="Last 30 Days" />
+          <SectionHeader title={t('stats.last30Days')} />
           <div
             className="rounded-lg p-3"
             style={{ background: '#1C1C1C', border: '1px solid #242424' }}
@@ -421,13 +425,13 @@ export function StatsScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.15 }}
         >
-          <SectionHeader title="Category Breakdown" />
+          <SectionHeader title={t('stats.categoryBreakdown')} />
           <div
             className="rounded-lg p-3 space-y-3"
             style={{ background: '#1C1C1C', border: '1px solid #242424' }}
           >
             {categoryBreakdown.length === 0 ? (
-              <EmptyState message="No entries in this period" />
+              <EmptyState message={t('stats.noEntriesPeriod')} />
             ) : (
               categoryBreakdown.map((cat) => (
                 <div key={cat.id}>
@@ -460,7 +464,7 @@ export function StatsScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.2 }}
           >
-            <SectionHeader title="Mood Trend" />
+            <SectionHeader title={t('stats.moodTrend')} />
             <div
               className="rounded-lg p-3"
               style={{ background: '#1C1C1C', border: '1px solid #242424' }}
@@ -503,7 +507,7 @@ export function StatsScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.25 }}
           >
-            <SectionHeader title="Sleep Quality" />
+            <SectionHeader title={t('stats.sleepQuality')} />
             <div
               className="rounded-lg p-3"
               style={{ background: '#1C1C1C', border: '1px solid #242424' }}
@@ -545,14 +549,14 @@ export function StatsScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, delay: 0.3 }}
         >
-          <SectionHeader title="Habit Streaks" />
+          <SectionHeader title={t('stats.habitStreaks')} />
           <div
             className="rounded-lg divide-y"
             style={{ background: '#1C1C1C', border: '1px solid #242424', borderColor: '#242424' }}
           >
             {habits.length === 0 ? (
               <div className="p-4">
-                <EmptyState message="No habits tracked yet" />
+                <EmptyState message={t('stats.noHabitsTracked')} />
               </div>
             ) : (
               habits

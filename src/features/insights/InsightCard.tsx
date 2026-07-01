@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import type { Insight } from '@/types'
 
 const TAG_STYLES: Record<string, string> = {
@@ -8,11 +9,11 @@ const TAG_STYLES: Record<string, string> = {
   pattern: 'tag tag-pattern',
 }
 
-const TAG_LABELS: Record<string, string> = {
-  warning: 'Warning',
-  positive: 'Positive',
-  tip: 'Tip',
-  pattern: 'Pattern',
+const TAG_LABEL_KEYS: Record<string, string> = {
+  warning: 'ai.tagWarning',
+  positive: 'ai.tagPositive',
+  tip: 'ai.tagTip',
+  pattern: 'ai.tagPattern',
 }
 
 interface InsightCardProps {
@@ -21,6 +22,7 @@ interface InsightCardProps {
 }
 
 export function InsightCard({ insight, index }: InsightCardProps) {
+  const { t } = useTranslation()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -32,7 +34,7 @@ export function InsightCard({ insight, index }: InsightCardProps) {
       <div className="flex items-start justify-between gap-2 mb-2">
         <span className="text-2xl leading-none">{insight.emoji}</span>
         <span className={TAG_STYLES[insight.tag] ?? 'tag tag-tip'}>
-          {TAG_LABELS[insight.tag] ?? insight.tag}
+          {TAG_LABEL_KEYS[insight.tag] ? t(TAG_LABEL_KEYS[insight.tag]) : insight.tag}
         </span>
       </div>
 

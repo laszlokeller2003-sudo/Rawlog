@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { ArrowUp, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useChatStore } from '@/stores/useChatStore'
@@ -17,6 +18,7 @@ import { SuggestedPrompts } from './SuggestedPrompts'
 const FREE_MESSAGE_LIMIT = 5
 
 export function ChatTab() {
+  const { t } = useTranslation()
   const { messages, addMessage, updateMessage, appendToMessage, pendingQuestion, setPendingQuestion } = useChatStore()
   const { entries } = useEntriesStore()
   const { habits } = useHabitsStore()
@@ -79,13 +81,13 @@ export function ChatTab() {
       })
     } catch (err) {
       console.error('[Chat] streamChat error:', err)
-      toast.error('Chat failed. Please try again.')
-      updateMessage(assistantMsg.id, { content: 'Sorry, something went wrong. Please try again.' })
+      toast.error(t('ai.chat.chatFailed'))
+      updateMessage(assistantMsg.id, { content: t('ai.chat.chatError') })
     } finally {
       updateMessage(assistantMsg.id, { streaming: false })
       setIsSending(false)
     }
-  }, [input, isSending, messages, entries, habits, goals, profile, addMessage, updateMessage, appendToMessage])
+  }, [input, isSending, messages, entries, habits, goals, profile, addMessage, updateMessage, appendToMessage, t])
 
   // Process pending question
   useEffect(() => {
@@ -127,27 +129,27 @@ export function ChatTab() {
         <div className="border-t border-border p-4 bg-bg-surface flex flex-col items-center gap-3 text-center">
           <Lock size={20} className="text-accent-red" />
           <p className="text-sm text-text-primary font-semibold">
-            {FREE_MESSAGE_LIMIT} free messages used
+            {t('ai.chat.freeMessagesUsed', { count: FREE_MESSAGE_LIMIT })}
           </p>
-          <p className="text-xs text-text-muted">Upgrade to continue chatting with your AI PA</p>
+          <p className="text-xs text-text-muted">{t('ai.chat.upgradeToChatUnlimited')}</p>
           <button
             onClick={() => openPaywall('unlimited AI chat')}
             className="w-full bg-accent-red text-white text-sm font-bold py-2.5 rounded-lg"
           >
-            Upgrade to Premium
+            {t('ai.chat.upgradeToPremium')}
           </button>
         </div>
       ) : (
         <div className="border-t border-border p-3 flex items-end gap-2 bg-bg-surface">
           {!hasPremium && (
             <span className="absolute right-16 bottom-[68px] text-[10px] text-text-muted font-mono">
-              {FREE_MESSAGE_LIMIT - userMessageCount} free
+              {t('ai.chat.freeLeft', { count: FREE_MESSAGE_LIMIT - userMessageCount })}
             </span>
           )}
           <textarea
             ref={textareaRef}
             className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted resize-none overflow-hidden focus:border-accent-red focus:outline-none transition-colors"
-            placeholder="Ask your PA anything…"
+            placeholder={t('ai.chat.inputPlaceholder') as string}
             rows={1}
             value={input}
             onChange={handleInputChange}

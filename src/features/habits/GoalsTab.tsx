@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useGoalsStore } from '@/stores/useGoalsStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useUIStore } from '@/stores/useUIStore'
@@ -12,6 +13,7 @@ interface GoalsTabProps {
 }
 
 export function GoalsTab({ onAddGoal }: GoalsTabProps) {
+  const { t } = useTranslation()
   const { getActiveGoals, getAchievedGoals, goals } = useGoalsStore()
   const { profile } = useProfileStore()
   const { openPaywall } = useUIStore()
@@ -27,10 +29,10 @@ export function GoalsTab({ onAddGoal }: GoalsTabProps) {
   if (goals.length === 0) {
     return (
       <EmptyState
-        message="No goals yet. Set your sights high."
+        message={t('habits.noGoalsMessage')}
         icon="🏆"
         action={{
-          label: 'Create a Goal',
+          label: t('habits.createGoal'),
           onClick: onAddGoal,
         }}
       />
@@ -45,8 +47,8 @@ export function GoalsTab({ onAddGoal }: GoalsTabProps) {
           onClick={() => openPaywall('unlimited_goals')}
           className="mb-4 p-4 rounded-lg bg-accent-red/10 border border-accent-red/20 text-center cursor-pointer transition-all hover:bg-accent-red/15"
         >
-          <p className="text-sm font-semibold text-accent-red">Upgrade to Premium for Unlimited Goals</p>
-          <p className="text-xs text-[#888888] mt-1">You have reached the free limit of 2 goals. Tap to unlock.</p>
+          <p className="text-sm font-semibold text-accent-red">{t('habits.upgradeUnlimitedGoals')}</p>
+          <p className="text-xs text-[#888888] mt-1">{t('habits.freeLimitGoals')}</p>
         </div>
       )}
 
@@ -67,7 +69,7 @@ export function GoalsTab({ onAddGoal }: GoalsTabProps) {
           >
             <span className="flex items-center gap-1.5 text-yellow-500">
               <Trophy size={14} />
-              Achieved ({achievedGoals.length})
+              {t('habits.achieved')} ({achievedGoals.length})
             </span>
             {showAchieved ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   ChevronRight,
   Pencil,
@@ -126,6 +127,7 @@ interface PinSetupProps {
 }
 
 function PinSetup({ onSave, onCancel }: PinSetupProps) {
+  const { t } = useTranslation()
   const [pin, setPin] = useState('')
   const [confirm, setConfirm] = useState('')
   const [step, setStep] = useState<'enter' | 'confirm'>('enter')
@@ -145,7 +147,7 @@ function PinSetup({ onSave, onCancel }: PinSetupProps) {
         if (next === pin) {
           onSave(next)
         } else {
-          toast.error('PINs do not match')
+          toast.error(t('settings.pinsDoNotMatch'))
           setConfirm('')
           setPin('')
           setStep('enter')
@@ -175,7 +177,7 @@ function PinSetup({ onSave, onCancel }: PinSetupProps) {
   return (
     <div className="px-4 py-4 bg-bg-elevated border border-border rounded-lg mx-4 mb-2">
       <p className="text-[#F5F5F5] text-sm font-heading font-bold mb-1 text-center">
-        {step === 'enter' ? 'Enter 4-digit PIN' : 'Confirm PIN'}
+        {step === 'enter' ? t('settings.enterPin') : t('settings.confirmPin')}
       </p>
       <div className="flex justify-center gap-3 my-4">
         {[0, 1, 2, 3].map((i) => (
@@ -211,7 +213,7 @@ function PinSetup({ onSave, onCancel }: PinSetupProps) {
         onClick={onCancel}
         className="w-full text-[#888888] text-xs py-2 hover:text-[#F5F5F5] transition-colors"
       >
-        Cancel
+        {t('common.cancel')}
       </button>
     </div>
   )
@@ -224,6 +226,7 @@ interface CloudSyncFormProps {
 }
 
 function CloudSyncForm({ onClose }: CloudSyncFormProps) {
+  const { t } = useTranslation()
   const { updateProfile } = useProfileStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -231,7 +234,7 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
 
   const handleSignUp = async () => {
     if (!email || !password) {
-      toast.error('Email and password required')
+      toast.error(t('settings.emailPasswordRequired'))
       return
     }
     setLoading(true)
@@ -239,10 +242,10 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) throw error
       updateProfile({ cloudSyncEnabled: true })
-      toast.success('Account created! Check your email to confirm.')
+      toast.success(t('settings.accountCreatedToast'))
       onClose()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sign up failed'
+      const message = err instanceof Error ? err.message : t('settings.signUpFailed')
       toast.error(message)
     } finally {
       setLoading(false)
@@ -251,7 +254,7 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      toast.error('Email and password required')
+      toast.error(t('settings.emailPasswordRequired'))
       return
     }
     setLoading(true)
@@ -259,10 +262,10 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
       updateProfile({ cloudSyncEnabled: true })
-      toast.success('Signed in! Cloud sync enabled.')
+      toast.success(t('settings.signedInToast'))
       onClose()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sign in failed'
+      const message = err instanceof Error ? err.message : t('settings.signInFailed')
       toast.error(message)
     } finally {
       setLoading(false)
@@ -272,19 +275,19 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
   return (
     <div className="px-4 pb-4">
       <div className="bg-bg-elevated border border-border rounded-lg p-4 space-y-3">
-        <p className="text-[#F5F5F5] text-sm font-heading font-bold">Enable Cloud Sync</p>
+        <p className="text-[#F5F5F5] text-sm font-heading font-bold">{t('settings.enableCloudSyncTitle')}</p>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          placeholder={t('settings.emailPlaceholder')}
           className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-[#F5F5F5] text-sm placeholder:text-[#444444] focus:outline-none focus:border-accent-red transition-all"
         />
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder={t('settings.passwordPlaceholder')}
           className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-[#F5F5F5] text-sm placeholder:text-[#444444] focus:outline-none focus:border-accent-red transition-all"
         />
         <div className="flex gap-2">
@@ -293,21 +296,21 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
             disabled={loading}
             className="flex-1 bg-bg-card border border-border text-[#F5F5F5] text-sm font-heading py-2.5 rounded-lg hover:border-[#444444] transition-colors disabled:opacity-50"
           >
-            Sign In
+            {t('settings.signIn')}
           </button>
           <button
             onClick={handleSignUp}
             disabled={loading}
             className="flex-1 bg-accent-red text-white text-sm font-heading py-2.5 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
           >
-            {loading ? '...' : 'Sign Up'}
+            {loading ? '...' : t('settings.signUp')}
           </button>
         </div>
         <button
           onClick={onClose}
           className="w-full text-[#444444] text-xs hover:text-[#888888] transition-colors"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </div>
@@ -319,6 +322,7 @@ function CloudSyncForm({ onClose }: CloudSyncFormProps) {
 const CURRENCY_CYCLE: Currency[] = ['EUR', 'USD', 'GBP']
 
 export function ProfileScreen() {
+  const { t } = useTranslation()
   const { profile, authUserId, updateProfile, clearAll: clearProfile } = useProfileStore()
   const { entries, clearAll: clearEntries } = useEntriesStore()
   const { clearAll: clearHabits } = useHabitsStore()
@@ -334,8 +338,8 @@ export function ProfileScreen() {
   const handleRequestNotifPermission = async () => {
     const granted = await requestPermission()
     setNotifPermission(granted ? 'granted' : 'denied')
-    if (granted) toast.success('Notifications enabled!')
-    else toast.error('Notifications blocked in browser settings')
+    if (granted) toast.success(t('settings.notificationsEnabledToast'))
+    else toast.error(t('settings.notificationsBlockedToast'))
   }
 
   const trialActive = isTrialActive(profile.trialStartedAt)
@@ -353,14 +357,14 @@ export function ProfileScreen() {
 
   const handleLanguageToggle = () => {
     updateProfile({ language: profile.language === 'en' ? 'de' : 'en' })
-    toast.success(`Language changed to ${profile.language === 'en' ? 'Deutsch' : 'English'}`)
+    toast.success(t('settings.languageChangedToast', { lang: profile.language === 'en' ? 'Deutsch' : 'English' }))
   }
 
   const handleCurrencyCycle = () => {
     const idx = CURRENCY_CYCLE.indexOf(profile.currency)
     const next = CURRENCY_CYCLE[(idx + 1) % CURRENCY_CYCLE.length]
     updateProfile({ currency: next })
-    toast.success(`Currency: ${next}`)
+    toast.success(t('settings.currencyToast', { currency: next }))
   }
 
   const handleExportData = () => {
@@ -371,17 +375,17 @@ export function ProfileScreen() {
     }
     exportJSON(data, 'lyfe-export.json')
     exportCSV(entries, 'lyfe-entries.csv')
-    toast.success('Exported JSON + CSV')
+    toast.success(t('settings.exportedToast'))
   }
 
   const handleDeleteAllData = () => {
-    if (!window.confirm('Delete ALL data? This cannot be undone.')) return
+    if (!window.confirm(t('settings.deleteAllConfirm'))) return
     clearEntries()
     clearHabits()
     clearGoals()
     clearChat()
     clearProfile()
-    toast.success('All data deleted')
+    toast.success(t('settings.allDataDeletedToast'))
   }
 
   const handleAppLockToggle = (val: boolean) => {
@@ -389,14 +393,14 @@ export function ProfileScreen() {
       setPinSetupOpen(true)
     } else {
       updateProfile({ appLockEnabled: false, appLockPin: undefined })
-      toast.success('App lock disabled')
+      toast.success(t('settings.appLockDisabledToast'))
     }
   }
 
   const handlePinSave = (pin: string) => {
     updateProfile({ appLockEnabled: true, appLockPin: pin })
     setPinSetupOpen(false)
-    toast.success('PIN set — app lock enabled')
+    toast.success(t('settings.pinSetToast'))
   }
 
   const handleCloudSyncToggle = (val: boolean) => {
@@ -404,29 +408,29 @@ export function ProfileScreen() {
       setCloudSyncFormOpen(true)
     } else {
       updateProfile({ cloudSyncEnabled: false })
-      toast.success('Cloud sync disabled')
+      toast.success(t('settings.cloudSyncDisabledToast'))
     }
   }
 
   const handleSyncNow = async () => {
     const { authUserId } = useProfileStore.getState()
     if (!authUserId) {
-      toast.error('Sign in to enable cloud sync')
+      toast.error(t('settings.signInToEnableSync'))
       return
     }
-    const t = toast.loading('Syncing…')
+    const toastId = toast.loading(t('settings.syncingToast'))
     await pushToSupabase(authUserId)
-    toast.success('Synced!', { id: t })
+    toast.success(t('settings.syncedToast'), { id: toastId })
   }
 
   const handleSignOut = async () => {
-    if (!window.confirm('Sign out of your account?')) return
+    if (!window.confirm(t('settings.signOutConfirm'))) return
     try {
       await supabaseSignOut()
       updateProfile({ cloudSyncEnabled: false })
-      toast.success('Signed out')
+      toast.success(t('settings.signedOutToast'))
     } catch {
-      toast.error('Sign out failed')
+      toast.error(t('settings.signOutFailed'))
     }
   }
 
@@ -453,24 +457,24 @@ export function ProfileScreen() {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <p className="font-heading font-bold text-[20px] text-[#F5F5F5] truncate">
-              {profile.name || 'Your Name'}
+              {profile.name || t('settings.defaultName')}
             </p>
             {/* Premium badge */}
             <div className="mt-1">
               {profile.isPremium ? (
                 <span className="inline-flex items-center gap-1 bg-green-500/20 text-green-500 text-[10px] font-heading font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
-                  ✓ Premium
+                  ✓ {t('settings.premium')}
                 </span>
               ) : trialActive ? (
                 <span className="inline-flex items-center gap-1 bg-yellow-500/20 text-yellow-500 text-[10px] font-heading font-bold uppercase tracking-wider px-2 py-0.5 rounded-md">
-                  Trial: {trialDaysLeft} days left
+                  {t('settings.trialDaysLeft', { count: trialDaysLeft })}
                 </span>
               ) : (
                 <button
                   onClick={() => openPaywall()}
                   className="inline-flex items-center gap-1 bg-accent-red/20 text-accent-red text-[10px] font-heading font-bold uppercase tracking-wider px-2 py-0.5 rounded-md hover:bg-accent-red/30 transition-colors"
                 >
-                  Upgrade →
+                  {t('settings.upgradeArrow')}
                 </button>
               )}
             </div>
@@ -480,7 +484,7 @@ export function ProfileScreen() {
           <button
             onClick={() => setEditProfileOpen(true)}
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[#444444] hover:text-[#F5F5F5] transition-colors"
-            aria-label="Edit profile"
+            aria-label={t('settings.editProfileAria')}
           >
             <Pencil size={16} />
           </button>
@@ -513,8 +517,8 @@ export function ProfileScreen() {
               >
                 <Cloud size={18} className="text-accent-red flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-[#F5F5F5] text-sm font-heading font-bold">Sign In / Create Account</p>
-                  <p className="text-[#888888] text-xs mt-0.5">Back up your data · Enable AI chat · Sync across devices</p>
+                  <p className="text-[#F5F5F5] text-sm font-heading font-bold">{t('settings.signInCreateAccount')}</p>
+                  <p className="text-[#888888] text-xs mt-0.5">{t('settings.signInSubtitle')}</p>
                 </div>
                 <ChevronRight size={16} className="text-[#444444]" />
               </motion.button>
@@ -542,11 +546,11 @@ export function ProfileScreen() {
               className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-bg-surface border-t border-border rounded-t-2xl"
             >
               <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[#1A1A1A]">
-                <h3 className="font-heading font-bold text-base text-[#F5F5F5]">Edit Profile</h3>
+                <h3 className="font-heading font-bold text-base text-[#F5F5F5]">{t('settings.editProfile')}</h3>
                 <button
                   onClick={() => setEditProfileOpen(false)}
                   className="w-7 h-7 flex items-center justify-center text-[#888888] hover:text-[#F5F5F5] transition-colors"
-                  aria-label="Close"
+                  aria-label={t('settings.closeAria')}
                 >
                   <X size={18} />
                 </button>
@@ -560,36 +564,36 @@ export function ProfileScreen() {
       </AnimatePresence>
 
       {/* ── ACCOUNT ── */}
-      <SectionHeader label="Account" />
+      <SectionHeader label={t('settings.account')} />
       <div className="border-t border-[#1A1A1A]">
         <SettingsRow
           icon={<Pencil size={16} />}
-          label="Edit Profile"
+          label={t('settings.editProfile')}
           onClick={() => setEditProfileOpen(true)}
         />
         <SettingsRow
           icon={<Globe size={16} />}
-          label="Language"
+          label={t('settings.language')}
           value={profile.language === 'en' ? 'English' : 'Deutsch'}
           onClick={handleLanguageToggle}
         />
         <SettingsRow
           icon={<DollarSign size={16} />}
-          label="Currency"
+          label={t('settings.currency')}
           value={profile.currency}
           onClick={handleCurrencyCycle}
         />
         {authUserId ? (
           <SettingsRow
             icon={<Cloud size={16} />}
-            label="Sync Now"
+            label={t('settings.syncNow')}
             onClick={handleSyncNow}
           />
         ) : null}
         {authUserId ? (
           <SettingsRow
             icon={<X size={16} />}
-            label="Sign Out"
+            label={t('settings.signOut')}
             danger
             onClick={handleSignOut}
           />
@@ -597,19 +601,19 @@ export function ProfileScreen() {
       </div>
 
       {/* ── NOTIFICATIONS ── */}
-      <SectionHeader label="Notifications" />
+      <SectionHeader label={t('settings.notifications')} />
       <div className="border-t border-[#1A1A1A]">
         {notifPermission !== 'granted' && (
           <SettingsRow
             icon={<Bell size={16} />}
-            label={notifPermission === 'denied' ? 'Notifications Blocked' : 'Enable Notifications'}
-            value={notifPermission === 'denied' ? 'Allow in browser settings' : 'Tap to enable'}
+            label={notifPermission === 'denied' ? t('settings.notificationsBlocked') : t('settings.enableNotifications')}
+            value={notifPermission === 'denied' ? t('settings.allowInBrowserSettings') : t('settings.tapToEnable')}
             onClick={notifPermission !== 'denied' ? handleRequestNotifPermission : undefined}
           />
         )}
         <SettingsRow
           icon={<Bell size={16} />}
-          label="Daily Report"
+          label={t('settings.dailyReport')}
           showChevron={false}
           rightSlot={
             <div className="flex items-center gap-2">
@@ -631,7 +635,7 @@ export function ProfileScreen() {
         />
         <SettingsRow
           icon={<Bell size={16} />}
-          label="Weekly Report"
+          label={t('settings.weeklyReport')}
           showChevron={false}
           rightSlot={
             <Toggle
@@ -642,7 +646,7 @@ export function ProfileScreen() {
         />
         <SettingsRow
           icon={<Bell size={16} />}
-          label="Monthly Report"
+          label={t('settings.monthlyReport')}
           showChevron={false}
           rightSlot={
             <Toggle
@@ -654,11 +658,11 @@ export function ProfileScreen() {
       </div>
 
       {/* ── SECURITY ── */}
-      <SectionHeader label="Security" />
+      <SectionHeader label={t('settings.security')} />
       <div className="border-t border-[#1A1A1A]">
         <SettingsRow
           icon={<Lock size={16} />}
-          label="App Lock (PIN)"
+          label={t('settings.appLock')}
           showChevron={false}
           rightSlot={
             <Toggle
@@ -684,17 +688,17 @@ export function ProfileScreen() {
       </AnimatePresence>
 
       {/* ── DATA & PRIVACY ── */}
-      <SectionHeader label="Data & Privacy" />
+      <SectionHeader label={t('settings.data')} />
       <div className="border-t border-[#1A1A1A]">
         <SettingsRow
           icon={<Download size={16} />}
-          label="Export Data"
-          value="JSON + CSV"
+          label={t('settings.export')}
+          value={t('settings.exportFormatValue')}
           onClick={handleExportData}
         />
         <SettingsRow
           icon={<Cloud size={16} />}
-          label="Cloud Sync"
+          label={t('settings.cloudSync')}
           showChevron={false}
           rightSlot={
             <Toggle
@@ -705,7 +709,7 @@ export function ProfileScreen() {
         />
         <SettingsRow
           icon={<Trash2 size={16} />}
-          label="Delete All Data"
+          label={t('settings.deleteAll')}
           danger
           onClick={handleDeleteAllData}
         />
@@ -726,14 +730,14 @@ export function ProfileScreen() {
       </AnimatePresence>
 
       {/* ── PREMIUM ── */}
-      <SectionHeader label="Premium" />
+      <SectionHeader label={t('settings.premium')} />
       <div className="px-4">
         {profile.isPremium ? (
           <div className="border border-green-500/30 rounded-lg p-4 flex items-center gap-3 bg-green-500/5">
             <Crown size={20} className="text-green-500 flex-shrink-0" />
             <div>
-              <p className="text-[#F5F5F5] text-sm font-heading font-bold">Premium Active ✓</p>
-              <p className="text-[#888888] text-xs mt-0.5">All features unlocked</p>
+              <p className="text-[#F5F5F5] text-sm font-heading font-bold">{t('settings.premiumActive')}</p>
+              <p className="text-[#888888] text-xs mt-0.5">{t('settings.allFeaturesUnlocked')}</p>
             </div>
           </div>
         ) : (
@@ -743,8 +747,8 @@ export function ProfileScreen() {
           >
             <Crown size={20} className="text-accent-red flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-[#F5F5F5] text-sm font-heading font-bold">Upgrade to Premium →</p>
-              <p className="text-[#888888] text-xs mt-0.5">Unlock all features from 4.99€/mo</p>
+              <p className="text-[#F5F5F5] text-sm font-heading font-bold">{t('settings.upgradeToPremiumArrow')}</p>
+              <p className="text-[#888888] text-xs mt-0.5">{t('settings.unlockFromPrice')}</p>
             </div>
             <ChevronRight size={16} className="text-[#444444]" />
           </button>
@@ -752,22 +756,22 @@ export function ProfileScreen() {
       </div>
 
       {/* ── ABOUT ── */}
-      <SectionHeader label="About" />
+      <SectionHeader label={t('settings.about')} />
       <div className="border-t border-[#1A1A1A]">
         <SettingsRow
           icon={<Info size={16} />}
-          label="Version"
+          label={t('settings.version')}
           value="1.0.0"
           showChevron={false}
         />
         <SettingsRow
           icon={<ExternalLink size={16} />}
-          label="Privacy Policy"
+          label={t('settings.privacyPolicy')}
           onClick={() => window.open('https://lyfe.app/privacy', '_blank')}
         />
         <SettingsRow
           icon={<Shield size={16} />}
-          label="Terms of Service"
+          label={t('settings.termsOfService')}
           onClick={() => window.open('https://lyfe.app/terms', '_blank')}
         />
       </div>
@@ -775,7 +779,7 @@ export function ProfileScreen() {
       {/* Footer */}
       <div className="px-4 py-6 text-center">
         <p className="text-[#444444] text-[10px] font-body">
-          LYFE v1.0.0 — Track everything. Understand yourself.
+          {t('settings.footer')}
         </p>
       </div>
     </div>

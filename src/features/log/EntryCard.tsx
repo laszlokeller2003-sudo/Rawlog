@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import type { Entry } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/lib/categories'
 import { useEntriesStore } from '@/stores/useEntriesStore'
@@ -12,6 +13,7 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
+  const { t } = useTranslation()
   const [showActions, setShowActions] = useState(false)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const deleteEntry = useEntriesStore((s) => s.deleteEntry)
@@ -120,7 +122,7 @@ export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
               className="btn-ghost text-xs py-1 px-2"
               onClick={() => { onEdit(); setShowActions(false) }}
             >
-              Edit
+              {t('common.edit')}
             </button>
           )}
           <button
@@ -129,14 +131,14 @@ export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
             style={{ color: 'var(--accent-red)' }}
             onClick={handleDelete}
           >
-            Delete
+            {t('common.delete')}
           </button>
           <button
             type="button"
             className="btn-ghost text-xs py-1 px-2"
             onClick={() => setShowActions(false)}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </motion.div>
       )}

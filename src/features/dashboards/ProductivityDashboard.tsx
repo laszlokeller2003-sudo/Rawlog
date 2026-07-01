@@ -14,6 +14,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useTranslation } from 'react-i18next'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { toDateString } from '@/lib/utils'
 import type { WorkFields } from '@/types'
@@ -57,6 +58,7 @@ function EmptyState({ icon, message }: { icon?: string; message: string }) {
 }
 
 export function ProductivityDashboard() {
+  const { t } = useTranslation()
   const { entries } = useEntriesStore()
   const workEntries = useMemo(() => entries.filter((e) => e.category === 'work'), [entries])
 
@@ -173,10 +175,10 @@ export function ProductivityDashboard() {
     >
       {/* Deep Work Hours */}
       <div>
-        <SectionHeader title="Deep Work Hours (30d)" />
+        <SectionHeader title={t('dashboards.productivity.deepWorkHours')} />
         <Card>
           {workEntries.filter((e) => e.subcategory === 'Deep Work').length === 0 ? (
-            <EmptyState icon="⚡" message="No Deep Work sessions logged yet" />
+            <EmptyState icon="⚡" message={t('dashboards.productivity.noDeepWork')} />
           ) : (
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={deepWorkData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -193,7 +195,7 @@ export function ProductivityDashboard() {
                   axisLine={{ stroke: '#242424' }}
                   tickLine={false}
                 />
-                <Tooltip {...tooltipStyle} formatter={(v: any) => [`${v}h`, 'Deep Work']} />
+                <Tooltip {...tooltipStyle} formatter={(v: any) => [`${v}h`, t('dashboards.productivity.deepWork')]} />
                 <Bar dataKey="hours" fill="#6366F1" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -204,7 +206,7 @@ export function ProductivityDashboard() {
       {/* Focus Score Trend */}
       {focusScoreData.length > 0 && (
         <div>
-          <SectionHeader title="Focus Score Trend" />
+          <SectionHeader title={t('dashboards.productivity.focusScoreTrend')} />
           <Card>
             <ResponsiveContainer width="100%" height={150}>
               <LineChart data={focusScoreData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -239,7 +241,7 @@ export function ProductivityDashboard() {
 
       {/* Work vs Procrastination */}
       <div>
-        <SectionHeader title="Work vs Procrastination" />
+        <SectionHeader title={t('dashboards.productivity.workVsProcrastination')} />
         <Card className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div
@@ -249,7 +251,7 @@ export function ProductivityDashboard() {
               <div className="font-mono text-3xl font-bold" style={{ color: '#6366F1' }}>
                 {deepWorkCount}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#888888' }}>Deep Work</div>
+              <div className="text-xs mt-1" style={{ color: '#888888' }}>{t('dashboards.productivity.deepWork')}</div>
             </div>
             <div
               className="rounded-lg p-3 text-center"
@@ -258,13 +260,13 @@ export function ProductivityDashboard() {
               <div className="font-mono text-3xl font-bold" style={{ color: '#FF2020' }}>
                 {procrastinatedCount}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#888888' }}>Procrastinated</div>
+              <div className="text-xs mt-1" style={{ color: '#888888' }}>{t('dashboards.productivity.procrastinated')}</div>
             </div>
           </div>
           {totalWP > 0 && (
             <div>
               <div className="flex justify-between mb-1.5">
-                <span className="text-xs" style={{ color: '#6366F1' }}>Focus</span>
+                <span className="text-xs" style={{ color: '#6366F1' }}>{t('dashboards.productivity.focus')}</span>
                 <span className="text-xs font-mono" style={{ color: '#6366F1' }}>{deepWorkPct}%</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden flex" style={{ background: '#242424' }}>
@@ -280,17 +282,17 @@ export function ProductivityDashboard() {
 
       {/* Flow State */}
       <div>
-        <SectionHeader title="Flow State" />
+        <SectionHeader title={t('dashboards.productivity.flowState')} />
         <Card className="text-center">
           <div className="font-mono text-5xl font-bold mb-2" style={{ color: '#6366F1' }}>
             {flowStateCount}
           </div>
           <div className="text-sm" style={{ color: '#888888' }}>
-            flow states this month
+            {t('dashboards.productivity.flowStatesThisMonth')}
           </div>
           {flowStateCount === 0 && (
             <div className="text-xs mt-2" style={{ color: '#444444' }}>
-              Log 'Flow State' work sessions to track this
+              {t('dashboards.productivity.flowStateHint')}
             </div>
           )}
         </Card>
@@ -298,10 +300,10 @@ export function ProductivityDashboard() {
 
       {/* Work Distribution */}
       <div>
-        <SectionHeader title="Work Distribution" />
+        <SectionHeader title={t('dashboards.productivity.workDistribution')} />
         <Card>
           {workDistribution.length === 0 ? (
-            <EmptyState icon="⚡" message="No work entries yet" />
+            <EmptyState icon="⚡" message={t('dashboards.productivity.noWorkEntries')} />
           ) : (
             <div className="flex flex-col items-center gap-4">
               <ResponsiveContainer width="100%" height={200}>
@@ -343,15 +345,15 @@ export function ProductivityDashboard() {
 
       {/* Peak Productivity Time */}
       <div>
-        <SectionHeader title="Peak Productivity Time" />
+        <SectionHeader title={t('dashboards.productivity.peakProductivityTime')} />
         <Card>
           {workEntries.length === 0 ? (
-            <EmptyState icon="⏰" message="No work entries to analyze yet" />
+            <EmptyState icon="⏰" message={t('dashboards.productivity.noWorkToAnalyze')} />
           ) : (
             <>
               {peakHour && (
                 <div className="text-center mb-3">
-                  <span className="text-xs" style={{ color: '#444444' }}>Peak hour: </span>
+                  <span className="text-xs" style={{ color: '#444444' }}>{t('dashboards.productivity.peakHour')}: </span>
                   <span className="font-mono font-bold" style={{ color: '#6366F1' }}>
                     {peakHour.label}:00 – {peakHour.label}:59
                   </span>
@@ -383,7 +385,7 @@ export function ProductivityDashboard() {
                   <Bar
                     dataKey="count"
                     radius={[2, 2, 0, 0]}
-                    name="Sessions"
+                    name={t('dashboards.productivity.sessions') as string}
                   >
                     {hourData
                       .filter((h) => h.count > 0 || (h.hour >= 6 && h.hour <= 22))

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Minus, Trash2, Trophy } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { useGoalsStore } from '@/stores/useGoalsStore'
 import { getCategoryById } from '@/lib/categories'
 import { hapticSuccess, hapticTap } from '@/lib/haptics'
@@ -12,6 +13,7 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal }: GoalCardProps) {
+  const { t } = useTranslation()
   const { updateProgress, deleteGoal } = useGoalsStore()
   const category = getCategoryById(goal.category)
   
@@ -29,7 +31,7 @@ export function GoalCard({ goal }: GoalCardProps) {
     setManualValue(String(newValue))
     if (newValue === goal.targetValue) {
       hapticSuccess()
-      toast.success(`🏆 Goal achieved: ${goal.title}!`)
+      toast.success(t('habits.goalAchievedToast', { title: goal.title }))
     }
   }
 
@@ -47,14 +49,14 @@ export function GoalCard({ goal }: GoalCardProps) {
     setIsEditing(false)
     if (val >= goal.targetValue && !goal.achieved) {
       hapticSuccess()
-      toast.success(`🏆 Goal achieved: ${goal.title}!`)
+      toast.success(t('habits.goalAchievedToast', { title: goal.title }))
     }
   }
 
   const handleDelete = () => {
-    if (window.confirm(`Delete goal "${goal.title}"?`)) {
+    if (window.confirm(t('habits.deleteGoalConfirm', { title: goal.title }))) {
       deleteGoal(goal.id)
-      toast.success('Goal deleted')
+      toast.success(t('habits.goalDeletedToast'))
     }
   }
 
@@ -77,7 +79,7 @@ export function GoalCard({ goal }: GoalCardProps) {
       <button
         onClick={handleDelete}
         className="absolute top-3 right-3 text-text-muted hover:text-text-primary transition-colors p-1"
-        aria-label="Delete goal"
+        aria-label={t('habits.deleteGoalAria')}
       >
         <Trash2 size={14} />
       </button>
@@ -91,7 +93,7 @@ export function GoalCard({ goal }: GoalCardProps) {
         {goal.achieved ? (
           <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-500 uppercase tracking-wide bg-yellow-500/10 px-2 py-0.5 rounded-full">
             <Trophy size={10} />
-            Achieved
+            {t('habits.achieved')}
           </span>
         ) : (
           <span
@@ -122,7 +124,7 @@ export function GoalCard({ goal }: GoalCardProps) {
       {/* Deadline if set */}
       {goal.deadline && (
         <div className="text-[11px] text-text-muted mb-4 font-mono">
-          Deadline: {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+          {t('habits.deadline', { date: new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) })}
         </div>
       )}
 
@@ -158,7 +160,7 @@ export function GoalCard({ goal }: GoalCardProps) {
                   onClick={handleManualSave}
                   className="px-2.5 py-1 rounded bg-accent-red text-white font-heading text-xs font-bold"
                 >
-                  Ok
+                  {t('habits.ok')}
                 </button>
               </>
             ) : (
@@ -166,7 +168,7 @@ export function GoalCard({ goal }: GoalCardProps) {
                 onClick={() => setIsEditing(true)}
                 className="text-xs text-text-muted hover:text-text-primary underline font-mono"
               >
-                Set Value
+                {t('habits.setValue')}
               </button>
             )}
           </div>

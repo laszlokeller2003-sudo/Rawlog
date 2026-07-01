@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { BottomSheet } from '@/components/BottomSheet'
 import { PillSelector } from '@/components/PillSelector'
 import { useHabitsStore } from '@/stores/useHabitsStore'
-import { DEFAULT_CATEGORIES } from '@/lib/categories'
+import { useProfileStore } from '@/stores/useProfileStore'
+import { DEFAULT_CATEGORIES, getCategoryName } from '@/lib/categories'
 import type { CategoryId, HabitFrequency } from '@/types'
 import { hapticSuccess } from '@/lib/haptics'
 
 const FREQUENCY_OPTIONS = ['Daily', 'Weekly', 'Custom']
-const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 // Days of week: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun
 const DAY_VALUES = [1, 2, 3, 4, 5, 6, 0]
 
@@ -19,7 +20,15 @@ interface CreateHabitModalProps {
 }
 
 export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
+  const { t } = useTranslation()
   const { addHabit } = useHabitsStore()
+  const { profile } = useProfileStore()
+  const FREQUENCY_LABELS: Record<string, string> = {
+    Daily: t('habits.frequencyDaily'),
+    Weekly: t('habits.frequencyWeekly'),
+    Custom: t('habits.frequencyCustom'),
+  }
+  const DAY_LABELS = t('habits.dayLabels', { returnObjects: true }) as string[]
 
   const [name, setName] = useState('')
   const [category, setCategory] = useState<CategoryId>('fitness')
@@ -44,7 +53,7 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
 
   const handleSave = () => {
     if (!name.trim()) {
-      toast.error('Enter a habit name')
+      toast.error(t('habits.errorEnterHabitName'))
       return
     }
 
@@ -55,7 +64,7 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
       frequency = 'weekly'
     } else {
       if (customDays.length === 0) {
-        toast.error('Select at least one day')
+        toast.error(t('habits.errorSelectDay'))
         return
       }
       frequency = customDays
@@ -70,20 +79,20 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
     })
 
     hapticSuccess()
-    toast.success('Habit created 🔥')
+    toast.success(t('habits.habitCreatedToast'))
     handleClose()
   }
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} title="New Habit">
+    <BottomSheet isOpen={isOpen} onClose={handleClose} title={t('habits.newHabit')}>
       <div className="px-4 pb-8 flex flex-col gap-5">
         {/* Name */}
         <div>
-          <label className="input-label">Habit Name</label>
+          <label className="input-label">{t('habits.habitName')}</label>
           <input
             type="text"
             className="input-field"
-            placeholder="e.g. Morning run, No alcohol…"
+            placeholder={t('habits.habitNamePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -92,7 +101,7 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
 
         {/* Category */}
         <div>
-          <label className="input-label">Category</label>
+          <label className="input-label">{t('habits.category')}</label>
           <div className="flex flex-wrap gap-2">
             {DEFAULT_CATEGORIES.map((cat) => (
               <button
@@ -101,7 +110,7 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
                 className={`pill text-xs ${category === cat.id ? 'active' : ''}`}
                 onClick={() => setCategory(cat.id)}
               >
-                {cat.icon} {cat.name}
+                {cat.icon} {getCategoryName(cat, profile.language)}
               </button>
             ))}
           </div>
@@ -109,9 +118,10 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
 
         {/* Frequency */}
         <div>
-          <label className="input-label">Frequency</label>
+          <label className="input-label">{t('habits.frequency')}</label>
           <PillSelector
             options={FREQUENCY_OPTIONS}
+            labels={FREQUENCY_LABELS}
             value={frequencyOption}
             onChange={(v) => setFrequencyOption(v as string)}
           />
@@ -124,7 +134,7 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <label className="input-label">Days of the week</label>
+            <label className="input-label">{t('habits.daysOfWeek')}</label>
             <div className="flex gap-2 mt-1">
               {DAY_LABELS.map((label, i) => {
                 const dayVal = DAY_VALUES[i]
@@ -151,9 +161,9 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
         {/* Grace period toggle */}
         <div className="flex items-center justify-between py-1">
           <div>
-            <p className="text-sm text-text-primary font-medium">1-day grace period</p>
+            <p className="text-sm text-text-primary font-medium">{t('habits.gracePeriodTitle')}</p>
             <p className="text-xs text-text-secondary mt-0.5">
-              Streak won't break if you miss one day
+              {t('habits.gracePeriodDesc')}
             </p>
           </div>
           <button
@@ -175,7 +185,7 @@ export function CreateHabitModal({ isOpen, onClose }: CreateHabitModalProps) {
 
         {/* Save button */}
         <button className="btn-primary" onClick={handleSave}>
-          Create Habit
+          {t('habits.createHabitBtn')}
         </button>
       </div>
     </BottomSheet>

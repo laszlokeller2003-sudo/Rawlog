@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { motion, Variants } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
+import { de } from 'date-fns/locale'
 import { Flame, ChevronRight } from 'lucide-react'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { useEntriesStore } from '@/stores/useEntriesStore'
@@ -416,7 +417,7 @@ export function HomeScreen() {
                 className="font-mono"
                 style={{ fontSize: 11, color: '#444444', marginTop: 4 }}
               >
-                {format(new Date(), 'EEEE, d MMMM yyyy')}
+                {format(new Date(), 'EEEE, d MMMM yyyy', profile.language === 'de' ? { locale: de } : undefined)}
               </p>
             </div>
 

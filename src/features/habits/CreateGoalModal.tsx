@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useGoalsStore } from '@/stores/useGoalsStore'
-import { DEFAULT_CATEGORIES } from '@/lib/categories'
+import { useProfileStore } from '@/stores/useProfileStore'
+import { DEFAULT_CATEGORIES, getCategoryName } from '@/lib/categories'
 import type { CategoryId } from '@/types'
 import { hapticSuccess } from '@/lib/haptics'
 
@@ -13,7 +15,9 @@ interface CreateGoalModalProps {
 }
 
 export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
+  const { t } = useTranslation()
   const { addGoal } = useGoalsStore()
+  const { profile } = useProfileStore()
 
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<CategoryId>('fitness')
@@ -34,21 +38,21 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
 
   const handleSave = () => {
     if (!title.trim()) {
-      toast.error('Enter a goal title')
+      toast.error(t('habits.errorEnterGoalTitle'))
       return
     }
     const targetVal = parseFloat(targetValue)
     if (isNaN(targetVal) || targetVal <= 0) {
-      toast.error('Enter a valid target value greater than 0')
+      toast.error(t('habits.errorTargetValue'))
       return
     }
     const currentVal = parseFloat(currentValue)
     if (isNaN(currentVal) || currentVal < 0) {
-      toast.error('Current value must be a positive number')
+      toast.error(t('habits.errorCurrentValue'))
       return
     }
     if (!unit.trim()) {
-      toast.error('Enter a unit of measurement (e.g. km, hr)')
+      toast.error(t('habits.errorUnit'))
       return
     }
 
@@ -62,20 +66,20 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
     })
 
     hapticSuccess()
-    toast.success('Goal created 🏆')
+    toast.success(t('habits.goalCreatedToast'))
     handleClose()
   }
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={handleClose} title="New Goal">
+    <BottomSheet isOpen={isOpen} onClose={handleClose} title={t('habits.newGoal')}>
       <div className="px-4 pb-8 flex flex-col gap-5">
         {/* Title */}
         <div>
-          <label className="input-label">Goal Title</label>
+          <label className="input-label">{t('habits.goalTitle')}</label>
           <input
             type="text"
             className="input-field"
-            placeholder="e.g. Run 100km, Read 5 books…"
+            placeholder={t('habits.goalTitlePlaceholder')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
@@ -84,7 +88,7 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
 
         {/* Category */}
         <div>
-          <label className="input-label">Category</label>
+          <label className="input-label">{t('habits.category')}</label>
           <div className="flex flex-wrap gap-2">
             {DEFAULT_CATEGORIES.map((cat) => (
               <button
@@ -93,7 +97,7 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
                 className={`pill text-xs ${category === cat.id ? 'active' : ''}`}
                 onClick={() => setCategory(cat.id)}
               >
-                {cat.icon} {cat.name}
+                {cat.icon} {getCategoryName(cat, profile.language)}
               </button>
             ))}
           </div>
@@ -102,21 +106,21 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
         {/* Target and Unit */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="input-label">Target Value</label>
+            <label className="input-label">{t('habits.targetValue')}</label>
             <input
               type="number"
               className="input-field"
-              placeholder="e.g. 100"
+              placeholder={t('habits.targetValuePlaceholder')}
               value={targetValue}
               onChange={(e) => setTargetValue(e.target.value)}
             />
           </div>
           <div>
-            <label className="input-label">Unit</label>
+            <label className="input-label">{t('habits.unit')}</label>
             <input
               type="text"
               className="input-field"
-              placeholder="e.g. km, times"
+              placeholder={t('habits.unitPlaceholder')}
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
             />
@@ -125,7 +129,7 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
 
         {/* Current Value */}
         <div>
-          <label className="input-label">Starting Value</label>
+          <label className="input-label">{t('habits.startingValue')}</label>
           <input
             type="number"
             className="input-field"
@@ -137,7 +141,7 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
 
         {/* Deadline */}
         <div>
-          <label className="input-label">Deadline (Optional)</label>
+          <label className="input-label">{t('habits.deadlineOptional')}</label>
           <input
             type="date"
             className="input-field"
@@ -149,7 +153,7 @@ export function CreateGoalModal({ isOpen, onClose }: CreateGoalModalProps) {
 
         {/* Save button */}
         <button className="btn-primary mt-2" onClick={handleSave}>
-          Create Goal
+          {t('habits.createGoalBtn')}
         </button>
       </div>
     </BottomSheet>

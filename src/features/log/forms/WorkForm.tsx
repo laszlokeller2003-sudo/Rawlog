@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { WorkFields } from '@/types'
 import { GaugeInput } from '@/components/GaugeInput'
 import { PillSelector } from '@/components/PillSelector'
@@ -11,7 +12,14 @@ interface WorkFormProps {
 }
 
 const SESSION_TYPES = ['Deep Work', 'Meeting', 'Planung', 'E-Mails', 'Kreativ', 'Admin', 'Call', 'Andere']
+const SESSION_TYPE_KEYS = ['deepWork', 'meeting', 'planung', 'emails', 'kreativ', 'admin', 'call', 'andere']
+
 const LOCATIONS = ['Büro', 'Homeoffice', 'Café', 'Unterwegs', 'Andere']
+const LOCATION_KEYS = ['buero', 'homeoffice', 'cafe', 'unterwegs', 'andere']
+
+function labelMap(t: (key: string) => string, ns: string, values: readonly string[], keys: readonly string[]): Record<string, string> {
+  return Object.fromEntries(values.map((v, i) => [v, t(`forms.work.${ns}.${keys[i]}`)]))
+}
 
 function calcShiftDuration(start?: string, end?: string, breakMins?: number): number | undefined {
   if (!start || !end) return undefined
@@ -23,8 +31,11 @@ function calcShiftDuration(start?: string, end?: string, breakMins?: number): nu
 }
 
 export function WorkForm({ fields, onChange }: WorkFormProps) {
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
   const { profile } = useProfileStore()
+  const sessionTypeLabels = labelMap(t, 'sessionTypes', SESSION_TYPES, SESSION_TYPE_KEYS)
+  const locationLabels = labelMap(t, 'locations', LOCATIONS, LOCATION_KEYS)
 
   useEffect(() => {
     if (fields.shiftMode) {
@@ -45,9 +56,10 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
     <div className="space-y-4">
       {/* Session type */}
       <div>
-        <label className="input-label">Session-Typ</label>
+        <label className="input-label">{t('forms.work.sessionType')}</label>
         <PillSelector
           options={SESSION_TYPES}
+          labels={sessionTypeLabels}
           value={fields.sessionType ?? ''}
           onChange={(v) => onChange({ ...fields, sessionType: v as string })}
         />
@@ -56,8 +68,8 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
       {/* Shift mode toggle */}
       <div className="flex items-center justify-between py-1">
         <div>
-          <span className="input-label mb-0">Schicht-Modus</span>
-          <div className="text-xs mt-0.5" style={{ color: '#444444' }}>Start/Ende + Pause → Nettostunden auto</div>
+          <span className="input-label mb-0">{t('forms.work.shiftMode')}</span>
+          <div className="text-xs mt-0.5" style={{ color: '#444444' }}>{t('forms.work.shiftModeDesc')}</div>
         </div>
         <button
           type="button"
@@ -79,7 +91,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="input-label">Start</label>
+              <label className="input-label">{t('forms.work.start')}</label>
               <input
                 className="input-field"
                 type="time"
@@ -89,7 +101,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
               />
             </div>
             <div>
-              <label className="input-label">Ende</label>
+              <label className="input-label">{t('forms.work.end')}</label>
               <input
                 className="input-field"
                 type="time"
@@ -100,7 +112,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
             </div>
           </div>
           <div>
-            <label className="input-label">Pause (Minuten)</label>
+            <label className="input-label">{t('forms.work.breakMinutes')}</label>
             <input
               className="input-field"
               type="number"
@@ -115,7 +127,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
           {fields.duration !== undefined && fields.duration > 0 && (
             <div className="text-center py-1">
               <span className="font-mono text-lg font-bold" style={{ color: '#6366F1' }}>
-                {hours}h {mins}m Netto
+                {t('forms.work.netDuration', { hours, mins })}
               </span>
             </div>
           )}
@@ -123,7 +135,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
       ) : (
         /* Manual duration */
         <div>
-          <label className="input-label">Dauer</label>
+          <label className="input-label">{t('forms.work.duration')}</label>
           <div className="flex gap-2">
             <div className="flex-1">
               <input
@@ -139,7 +151,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
                 placeholder="0"
                 style={{ borderRadius: 0 }}
               />
-              <div className="text-[10px] uppercase tracking-widest mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>Stunden</div>
+              <div className="text-[10px] uppercase tracking-widest mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>{t('forms.work.hours')}</div>
             </div>
             <div className="flex-1">
               <input
@@ -155,7 +167,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
                 placeholder="0"
                 style={{ borderRadius: 0 }}
               />
-              <div className="text-[10px] uppercase tracking-widest mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>Minuten</div>
+              <div className="text-[10px] uppercase tracking-widest mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>{t('forms.work.minutes')}</div>
             </div>
           </div>
         </div>
@@ -163,7 +175,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
 
       {/* Focus gauge */}
       <GaugeInput
-        label="Fokus"
+        label={t('forms.work.focus')}
         value={fields.focusScore ?? 0}
         onChange={(v) => onChange({ ...fields, focusScore: v })}
         personalGoal={profile.workFocusGoal}
@@ -176,7 +188,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
         onClick={() => setShowMore(!showMore)}
       >
         <span>{showMore ? '▲' : '▼'}</span>
-        <span>{showMore ? 'Weniger' : 'Mehr Details'}</span>
+        <span>{showMore ? t('forms.lessDetails') : t('forms.moreDetails')}</span>
       </button>
 
       {showMore && (
@@ -184,7 +196,7 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
           <div className="divider" />
 
           <div>
-            <label className="input-label">Erledigte Tasks</label>
+            <label className="input-label">{t('forms.work.tasksCompleted')}</label>
             <input
               className="input-field"
               type="number"
@@ -198,30 +210,31 @@ export function WorkForm({ fields, onChange }: WorkFormProps) {
           </div>
 
           <Input
-            label="Win des Tages"
+            label={t('forms.work.winOfTheDay')}
             value={fields.win ?? ''}
             onChange={(v) => onChange({ ...fields, win: v || undefined })}
-            placeholder="Was hat gut funktioniert?"
+            placeholder={t('forms.work.winPlaceholder')}
           />
 
           <Input
-            label="Blocker"
+            label={t('forms.work.blocker')}
             value={fields.blocker ?? ''}
             onChange={(v) => onChange({ ...fields, blocker: v || undefined })}
-            placeholder="Was hat dich aufgehalten?"
+            placeholder={t('forms.work.blockerPlaceholder')}
           />
 
           <GaugeInput
-            label="Energie"
+            label={t('forms.work.energy')}
             value={fields.energyScore ?? 0}
             onChange={(v) => onChange({ ...fields, energyScore: v })}
             color="#6366F1"
           />
 
           <div>
-            <label className="input-label">Ort</label>
+            <label className="input-label">{t('forms.work.location')}</label>
             <PillSelector
               options={LOCATIONS}
+              labels={locationLabels}
               value={fields.location ?? ''}
               onChange={(v) => onChange({ ...fields, location: v as string })}
             />

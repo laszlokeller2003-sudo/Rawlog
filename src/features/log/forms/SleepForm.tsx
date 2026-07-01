@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SleepFields } from '@/types'
 import { GaugeInput } from '@/components/GaugeInput'
 import { PillSelector } from '@/components/PillSelector'
@@ -11,7 +12,14 @@ interface SleepFormProps {
 }
 
 const SLEEP_AIDS = ['Keins', 'Melatonin', 'Magnesium', 'CBD', 'Alkohol', 'Schlaftabletten', 'Kräutertee']
+const SLEEP_AID_KEYS = ['keins', 'melatonin', 'magnesium', 'cbd', 'alkohol', 'schlaftabletten', 'kraeutertee']
+
 const ENVIRONMENTS = ['Zuhause', 'Hotel', 'Sofa', 'Draußen', 'Freunde', 'Unterwegs']
+const ENVIRONMENT_KEYS = ['zuhause', 'hotel', 'sofa', 'draussen', 'freunde', 'unterwegs']
+
+function labelMap(t: (key: string) => string, ns: string, values: readonly string[], keys: readonly string[]): Record<string, string> {
+  return Object.fromEntries(values.map((v, i) => [v, t(`forms.sleep.${ns}.${keys[i]}`)]))
+}
 
 function calcDuration(bedtime?: string, waketime?: string): number | undefined {
   if (!bedtime || !waketime) return undefined
@@ -23,8 +31,11 @@ function calcDuration(bedtime?: string, waketime?: string): number | undefined {
 }
 
 export function SleepForm({ fields, onChange }: SleepFormProps) {
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
   const { profile } = useProfileStore()
+  const sleepAidLabels = labelMap(t, 'sleepAids', SLEEP_AIDS, SLEEP_AID_KEYS)
+  const environmentLabels = labelMap(t, 'environments', ENVIRONMENTS, ENVIRONMENT_KEYS)
 
   // Auto-calc duration when bedtime or waketime changes
   useEffect(() => {
@@ -42,7 +53,7 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
       {/* Bedtime + Waketime */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="input-label">Einschlafen</label>
+          <label className="input-label">{t('forms.sleep.bedtime')}</label>
           <input
             className="input-field"
             type="time"
@@ -52,7 +63,7 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
           />
         </div>
         <div>
-          <label className="input-label">Aufwachen</label>
+          <label className="input-label">{t('forms.sleep.waketime')}</label>
           <input
             className="input-field"
             type="time"
@@ -69,13 +80,13 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
           <span className="font-mono text-lg font-bold" style={{ color: '#3B82F6' }}>
             {hours}h {mins}m
           </span>
-          <span className="text-xs ml-2" style={{ color: '#444444' }}>Schlafdauer</span>
+          <span className="text-xs ml-2" style={{ color: '#444444' }}>{t('forms.sleep.sleepDuration')}</span>
         </div>
       )}
 
       {/* Quality gauge */}
       <GaugeInput
-        label="Schlafqualität"
+        label={t('forms.sleep.sleepQuality')}
         value={fields.quality ?? 0}
         onChange={(v) => onChange({ ...fields, quality: v })}
         personalGoal={profile.sleepQualityGoal}
@@ -88,7 +99,7 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
         onClick={() => setShowMore(!showMore)}
       >
         <span>{showMore ? '▲' : '▼'}</span>
-        <span>{showMore ? 'Weniger' : 'Mehr Details'}</span>
+        <span>{showMore ? t('forms.lessDetails') : t('forms.moreDetails')}</span>
       </button>
 
       {showMore && (
@@ -97,7 +108,7 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
 
           {/* Times woken */}
           <div>
-            <label className="input-label">Mal aufgewacht</label>
+            <label className="input-label">{t('forms.sleep.timesWoken')}</label>
             <input
               className="input-field"
               type="number"
@@ -112,7 +123,7 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
 
           {/* Dream toggle + text */}
           <div className="flex items-center justify-between py-1">
-            <span className="input-label mb-0">Geträumt</span>
+            <span className="input-label mb-0">{t('forms.sleep.dreamed')}</span>
             <button
               type="button"
               onClick={() => onChange({ ...fields, dreams: !fields.dreams, dreamText: fields.dreams ? undefined : fields.dreamText })}
@@ -129,18 +140,19 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
           </div>
           {fields.dreams && (
             <Input
-              label="Traum-Notiz"
+              label={t('forms.sleep.dreamNote')}
               value={fields.dreamText ?? ''}
               onChange={(v) => onChange({ ...fields, dreamText: v || undefined })}
-              placeholder="Was hast du geträumt?"
+              placeholder={t('forms.sleep.dreamPlaceholder')}
             />
           )}
 
           {/* Sleep aid */}
           <div>
-            <label className="input-label">Einschlafhilfe</label>
+            <label className="input-label">{t('forms.sleep.sleepAid')}</label>
             <PillSelector
               options={SLEEP_AIDS}
+              labels={sleepAidLabels}
               value={fields.sleepAid ?? ''}
               onChange={(v) => onChange({ ...fields, sleepAid: v as string })}
             />
@@ -148,9 +160,10 @@ export function SleepForm({ fields, onChange }: SleepFormProps) {
 
           {/* Environment */}
           <div>
-            <label className="input-label">Umgebung</label>
+            <label className="input-label">{t('forms.sleep.environment')}</label>
             <PillSelector
               options={ENVIRONMENTS}
+              labels={environmentLabels}
               value={fields.environment ?? ''}
               onChange={(v) => onChange({ ...fields, environment: v as string })}
             />

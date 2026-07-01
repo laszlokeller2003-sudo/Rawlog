@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
+import { de } from 'date-fns/locale'
 import { Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInsights } from '@/lib/ai'
@@ -13,6 +15,7 @@ import { InsightCard } from './InsightCard'
 
 // Three-dot pulsing animation for loading state
 function LoadingDots() {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-12">
       <div className="flex items-center gap-2">
@@ -25,12 +28,13 @@ function LoadingDots() {
           />
         ))}
       </div>
-      <p className="text-text-secondary text-sm font-heading">PA is analyzing your data…</p>
+      <p className="text-text-secondary text-sm font-heading">{t('ai.paAnalyzing')}</p>
     </div>
   )
 }
 
 export function InsightsTab() {
+  const { t } = useTranslation()
   const { insights, isGeneratingInsights, setInsights, setGeneratingInsights, lastInsightAt } = useChatStore()
   const { entries } = useEntriesStore()
   const { habits } = useHabitsStore()
@@ -44,9 +48,9 @@ export function InsightsTab() {
       const context = buildDataContext(entries, habits, goals, profile)
       const result = await generateInsights(context)
       setInsights(result)
-      toast.success('Analysis complete')
+      toast.success(t('ai.analysisComplete'))
     } catch {
-      toast.error('Analysis failed. Try again.')
+      toast.error(t('ai.analysisFailed'))
     } finally {
       setGeneratingInsights(false)
     }
@@ -62,13 +66,13 @@ export function InsightsTab() {
         whileTap={{ scale: 0.97 }}
       >
         <Zap size={16} />
-        {isGeneratingInsights ? 'Analyzing…' : 'Analyze My Life'}
+        {isGeneratingInsights ? t('ai.analyzingShort') : t('ai.analyzeMyLife')}
       </motion.button>
 
       {/* Last analyzed timestamp */}
       {lastInsightAt && !isGeneratingInsights && (
         <p className="text-text-muted text-xs text-center mb-4">
-          Last analyzed: {format(new Date(lastInsightAt), 'MMM d, HH:mm')}
+          {t('ai.lastAnalyzed')}: {format(new Date(lastInsightAt), 'MMM d, HH:mm', profile.language === 'de' ? { locale: de } : undefined)}
         </p>
       )}
 
@@ -100,7 +104,7 @@ export function InsightsTab() {
         <div className="flex flex-col items-center justify-center py-16 text-center px-6">
           <span className="text-4xl mb-4">🤖</span>
           <p className="text-text-secondary text-sm leading-relaxed">
-            Tap <span className="text-text-primary font-semibold">"Analyze My Life"</span> to get insights from your PA.
+            {t('ai.tapToAnalyzeBefore')} <span className="text-text-primary font-semibold">"{t('ai.tapToAnalyzeQuoted')}"</span> {t('ai.tapToAnalyzeAfter')}
           </p>
         </div>
       )}

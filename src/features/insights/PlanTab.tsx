@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { FileText, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
@@ -49,6 +50,7 @@ function MarkdownText({ text }: { text: string }) {
 }
 
 export function PlanTab() {
+  const { t } = useTranslation()
   const [plan, setPlan] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const { entries } = useEntriesStore()
@@ -86,15 +88,21 @@ export function PlanTab() {
           }),
         })
         const result = await res.json()
-        setPlan(result.content?.[0]?.text ?? 'No plan generated.')
+        setPlan(result.content?.[0]?.text ?? t('ai.plan.noPlanGenerated'))
       } else {
         // Mock plan
         await new Promise((r) => setTimeout(r, 1500))
-        setPlan(`## Executive Summary\n\nYou have ${entries.length} entries logged. ${entries.length < 10 ? 'Not enough data for deep analysis — keep logging daily.' : 'Good data foundation for analysis.'}\n\n## Top 3 Focus Areas\n\n- **Sleep consistency** — Log sleep daily to enable scoring\n- **Habit completion** — ${habits.length} habits tracked, aim for 80%+ completion\n- **Mood tracking** — Regular mood logs reveal patterns\n\n## 7-Day Action Plan\n\n**Day 1-2:** Audit current habits. Log every entry.\n**Day 3-4:** Focus on sleep quality. Set consistent bedtime.\n**Day 5-6:** Review nutrition logs. Reduce processed food.\n**Day 7:** Review progress. Adjust goals.\n\n## Key Metrics to Watch\n\n- Life Score trend\n- Habit streak continuity\n- Sleep hours consistency`)
+        const m = (key: string, opts?: Record<string, unknown>) => t(`ai.plan.mock.${key}`, opts as any)
+        setPlan(
+          `## ${m('execSummary')}\n\n${m('entriesLogged', { count: entries.length })} ${entries.length < 10 ? m('notEnoughData') : m('goodFoundation')}\n\n` +
+          `## ${m('top3Title')}\n\n- **${m('sleepConsistency')}** — ${m('sleepConsistencyDesc')}\n- **${m('habitCompletion')}** — ${m('habitCompletionDesc', { count: habits.length })}\n- **${m('moodTracking')}** — ${m('moodTrackingDesc')}\n\n` +
+          `## ${m('actionPlanTitle')}\n\n**${m('day12')}:** ${m('day12Desc')}\n**${m('day34')}:** ${m('day34Desc')}\n**${m('day56')}:** ${m('day56Desc')}\n**${m('day7')}:** ${m('day7Desc')}\n\n` +
+          `## ${m('metricsTitle')}\n\n- ${m('metric1')}\n- ${m('metric2')}\n- ${m('metric3')}`
+        )
       }
-      toast.success('Plan generated!')
+      toast.success(t('ai.plan.generated'))
     } catch {
-      toast.error('Failed to generate plan')
+      toast.error(t('ai.plan.generateFailed'))
     } finally {
       setIsGenerating(false)
     }
@@ -104,8 +112,8 @@ export function PlanTab() {
     <div className="px-4 pt-4 pb-20">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="font-heading font-bold text-base text-text-primary">Improvement Plan</h2>
-          <p className="text-xs text-text-muted mt-0.5">AI-generated 7-day action plan</p>
+          <h2 className="font-heading font-bold text-base text-text-primary">{t('ai.plan.title')}</h2>
+          <p className="text-xs text-text-muted mt-0.5">{t('ai.plan.subtitle')}</p>
         </div>
         <motion.button
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent-red text-white text-xs font-bold"
@@ -123,7 +131,7 @@ export function PlanTab() {
           ) : (
             <FileText size={13} />
           )}
-          {isGenerating ? 'Generating…' : plan ? 'Regenerate' : 'Generate Plan'}
+          {isGenerating ? t('ai.plan.generating') : plan ? t('ai.plan.regenerate') : t('ai.plan.generatePlan')}
         </motion.button>
       </div>
 
@@ -145,7 +153,7 @@ export function PlanTab() {
                 />
               ))}
             </div>
-            <p className="text-text-muted text-sm">PA is building your plan…</p>
+            <p className="text-text-muted text-sm">{t('ai.plan.buildingPlan')}</p>
           </motion.div>
         )}
 
@@ -169,9 +177,9 @@ export function PlanTab() {
           >
             <span className="text-4xl mb-4">📋</span>
             <p className="text-text-secondary text-sm leading-relaxed">
-              Generate your personalized{' '}
-              <span className="text-text-primary font-semibold">7-day improvement plan</span>{' '}
-              based on your life data.
+              {t('ai.plan.emptyStateBefore')}{' '}
+              <span className="text-text-primary font-semibold">{t('ai.plan.emptyStateBold')}</span>{' '}
+              {t('ai.plan.emptyStateAfter')}
             </p>
           </motion.div>
         )}

@@ -13,6 +13,7 @@ import {
   YAxis as RechartsYAxis,
 } from 'recharts'
 import { Plus, Edit2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { generateId, toDateString } from '@/lib/utils'
@@ -53,8 +54,9 @@ function EmptyState({ icon, message }: { icon?: string; message: string }) {
 }
 
 export function BodyHealthDashboard() {
+  const { t } = useTranslation()
   const { entries } = useEntriesStore()
-  const { bodyMetrics, addBodyMetric, updateBodyMetric } = useProfileStore()
+  const { profile, bodyMetrics, addBodyMetric, updateBodyMetric } = useProfileStore()
 
   const [showWeightForm, setShowWeightForm] = useState(false)
   const [weightInput, setWeightInput] = useState('')
@@ -174,7 +176,7 @@ export function BodyHealthDashboard() {
         return t >= weekStart && t < weekEnd
       }).length
       weeks.push({
-        week: `W${weekStart.toLocaleDateString('en', { month: 'short', day: 'numeric' })}`,
+        week: `W${weekStart.toLocaleDateString(profile.language === 'de' ? 'de' : 'en', { month: 'short', day: 'numeric' })}`,
         count,
       })
     }
@@ -200,14 +202,14 @@ export function BodyHealthDashboard() {
       {/* Weight Chart */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <SectionHeader title="Weight (kg)" />
+          <SectionHeader title={t('dashboards.bodyHealth.weightKg')} />
           <button
             onClick={() => setShowWeightForm((v) => !v)}
             className="flex items-center gap-1 text-xs px-2 py-1 rounded-md"
             style={{ background: '#181818', color: '#FF2020', border: '1px solid #242424' }}
           >
             <Plus size={12} />
-            Add
+            {t('dashboards.bodyHealth.add')}
           </button>
         </div>
 
@@ -217,7 +219,7 @@ export function BodyHealthDashboard() {
               type="number"
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
-              placeholder="Weight in kg"
+              placeholder={t('dashboards.bodyHealth.weightPlaceholder') as string}
               className="flex-1 rounded-md px-3 py-2 text-sm outline-none"
               style={{ background: '#181818', border: '1px solid #242424', color: '#F5F5F5' }}
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FF2020')}
@@ -228,14 +230,14 @@ export function BodyHealthDashboard() {
               className="px-3 py-2 rounded-md text-sm font-medium"
               style={{ background: '#FF2020', color: '#F5F5F5' }}
             >
-              Save
+              {t('dashboards.bodyHealth.save')}
             </button>
           </div>
         )}
 
         <Card>
           {weightData.length === 0 ? (
-            <EmptyState icon="⚖️" message="Add your first weight measurement above" />
+            <EmptyState icon="⚖️" message={t('dashboards.bodyHealth.addFirstWeight')} />
           ) : (
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={weightData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -253,7 +255,7 @@ export function BodyHealthDashboard() {
                   tickLine={false}
                   domain={['auto', 'auto']}
                 />
-                <Tooltip {...tooltipStyle} formatter={(v: any) => [`${v} kg`, 'Weight']} />
+                <Tooltip {...tooltipStyle} formatter={(v: any) => [`${v} kg`, t('dashboards.bodyHealth.weight')]} />
                 <Line
                   type="monotone"
                   dataKey="weight"
@@ -271,14 +273,14 @@ export function BodyHealthDashboard() {
       {/* Body Measurements */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <SectionHeader title="Measurements (cm)" />
+          <SectionHeader title={t('dashboards.bodyHealth.measurementsCm')} />
           <button
             onClick={() => setShowMeasurementsForm((v) => !v)}
             className="flex items-center gap-1 text-xs px-2 py-1 rounded-md"
             style={{ background: '#181818', color: '#FF2020', border: '1px solid #242424' }}
           >
             <Edit2 size={12} />
-            Update
+            {t('dashboards.bodyHealth.update')}
           </button>
         </div>
 
@@ -288,7 +290,7 @@ export function BodyHealthDashboard() {
               {(['chest', 'waist', 'hips', 'arms'] as const).map((key) => (
                 <div key={key}>
                   <label className="text-xs block mb-1 capitalize" style={{ color: '#888888' }}>
-                    {key}
+                    {t(`dashboards.bodyHealth.${key}`)}
                   </label>
                   <input
                     type="number"
@@ -306,7 +308,7 @@ export function BodyHealthDashboard() {
               className="w-full py-2 rounded-md text-sm font-medium"
               style={{ background: '#FF2020', color: '#F5F5F5' }}
             >
-              Save Measurements
+              {t('dashboards.bodyHealth.saveMeasurements')}
             </button>
           </Card>
         )}
@@ -314,7 +316,7 @@ export function BodyHealthDashboard() {
         <div className="grid grid-cols-2 gap-2">
           {(['chest', 'waist', 'hips', 'arms'] as const).map((key) => (
             <Card key={key} className="text-center p-3">
-              <div className="text-xs capitalize mb-1" style={{ color: '#444444' }}>{key}</div>
+              <div className="text-xs capitalize mb-1" style={{ color: '#444444' }}>{t(`dashboards.bodyHealth.${key}`)}</div>
               <div className="font-mono text-lg font-bold" style={{ color: '#F5F5F5' }}>
                 {latestMeasurements?.[key] ? `${latestMeasurements[key]}cm` : '—'}
               </div>
@@ -326,24 +328,24 @@ export function BodyHealthDashboard() {
       {/* Energy Trend */}
       {energyEntries.length > 0 && (
         <div>
-          <SectionHeader title="Energy Log" />
+          <SectionHeader title={t('dashboards.bodyHealth.energyLog')} />
           <Card className="space-y-2">
             <div className="flex gap-3">
               <div className="flex-1 text-center p-2 rounded-md" style={{ background: '#181818' }}>
                 <div className="font-mono text-2xl font-bold" style={{ color: '#22C55E' }}>
                   {energyEntries.filter((e) => e.subcategory === 'High energy').length}
                 </div>
-                <div className="text-xs mt-1" style={{ color: '#444444' }}>High Energy</div>
+                <div className="text-xs mt-1" style={{ color: '#444444' }}>{t('dashboards.bodyHealth.highEnergy')}</div>
               </div>
               <div className="flex-1 text-center p-2 rounded-md" style={{ background: '#181818' }}>
                 <div className="font-mono text-2xl font-bold" style={{ color: '#FF2020' }}>
                   {energyEntries.filter((e) => e.subcategory === 'Low energy').length}
                 </div>
-                <div className="text-xs mt-1" style={{ color: '#444444' }}>Low Energy</div>
+                <div className="text-xs mt-1" style={{ color: '#444444' }}>{t('dashboards.bodyHealth.lowEnergy')}</div>
               </div>
             </div>
             <div className="text-xs text-center" style={{ color: '#444444' }}>
-              Total {energyEntries.length} logged entries
+              {t('dashboards.bodyHealth.totalLogged', { count: energyEntries.length })}
             </div>
           </Card>
         </div>
@@ -351,11 +353,11 @@ export function BodyHealthDashboard() {
 
       {/* Symptoms Timeline */}
       <div>
-        <SectionHeader title="Symptoms Timeline" />
+        <SectionHeader title={t('dashboards.bodyHealth.symptomsTimeline')} />
         <Card className="p-0">
           {symptomEntries.length === 0 ? (
             <div className="p-4">
-              <EmptyState icon="🏥" message="No symptoms logged" />
+              <EmptyState icon="🏥" message={t('dashboards.bodyHealth.noSymptoms')} />
             </div>
           ) : (
             <div className="divide-y" style={{ borderColor: '#242424' }}>
@@ -400,7 +402,7 @@ export function BodyHealthDashboard() {
       {/* Sleep vs Mood Correlation */}
       {sleepMoodData.length > 0 && (
         <div>
-          <SectionHeader title="Sleep vs Mood (30d)" />
+          <SectionHeader title={t('dashboards.bodyHealth.sleepVsMood')} />
           <Card>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={sleepMoodData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -435,7 +437,7 @@ export function BodyHealthDashboard() {
                   stroke="#3B82F6"
                   strokeWidth={2}
                   dot={false}
-                  name="Sleep"
+                  name={t('dashboards.bodyHealth.sleep') as string}
                   connectNulls
                 />
                 <Line
@@ -445,7 +447,7 @@ export function BodyHealthDashboard() {
                   stroke="#EAB308"
                   strokeWidth={2}
                   dot={false}
-                  name="Mood"
+                  name={t('dashboards.bodyHealth.mood') as string}
                   connectNulls
                 />
               </LineChart>
@@ -453,11 +455,11 @@ export function BodyHealthDashboard() {
             <div className="flex items-center justify-center gap-4 mt-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-0.5" style={{ background: '#3B82F6' }} />
-                <span className="text-xs" style={{ color: '#888888' }}>Sleep</span>
+                <span className="text-xs" style={{ color: '#888888' }}>{t('dashboards.bodyHealth.sleep')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-0.5" style={{ background: '#EAB308' }} />
-                <span className="text-xs" style={{ color: '#888888' }}>Mood</span>
+                <span className="text-xs" style={{ color: '#888888' }}>{t('dashboards.bodyHealth.mood')}</span>
               </div>
             </div>
           </Card>
@@ -466,10 +468,10 @@ export function BodyHealthDashboard() {
 
       {/* Workout Consistency */}
       <div>
-        <SectionHeader title="Workout Consistency (12W)" />
+        <SectionHeader title={t('dashboards.bodyHealth.workoutConsistency')} />
         <Card>
           {fitnessEntries.length === 0 ? (
-            <EmptyState icon="💪" message="No workouts logged yet" />
+            <EmptyState icon="💪" message={t('dashboards.bodyHealth.noWorkouts')} />
           ) : (
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={workoutData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -488,7 +490,7 @@ export function BodyHealthDashboard() {
                   allowDecimals={false}
                 />
                 <Tooltip {...tooltipStyle} />
-                <Bar dataKey="count" fill="#22C55E" radius={[2, 2, 0, 0]} name="Workouts" />
+                <Bar dataKey="count" fill="#22C55E" radius={[2, 2, 0, 0]} name={t('dashboards.bodyHealth.workouts') as string} />
               </BarChart>
             </ResponsiveContainer>
           )}

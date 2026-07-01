@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Camera, Save } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -45,13 +46,6 @@ function PillSelector<T extends string>({
   )
 }
 
-const SEX_OPTIONS: PillOption<BiologicalSex>[] = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
-]
-
 const LANGUAGE_OPTIONS: PillOption<Language>[] = [
   { value: 'en', label: 'English' },
   { value: 'de', label: 'Deutsch' },
@@ -64,7 +58,15 @@ const CURRENCY_OPTIONS: PillOption<Currency>[] = [
 ]
 
 export function EditProfileForm({ onClose }: EditProfileFormProps) {
+  const { t } = useTranslation()
   const { profile, updateProfile } = useProfileStore()
+
+  const SEX_OPTIONS: PillOption<BiologicalSex>[] = [
+    { value: 'male', label: t('onboarding.profile.sexMale') },
+    { value: 'female', label: t('onboarding.profile.sexFemale') },
+    { value: 'other', label: t('onboarding.profile.sexOther') },
+    { value: 'prefer_not_to_say', label: t('onboarding.profile.sexPrefer') },
+  ]
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState(profile.name)
@@ -90,7 +92,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
 
   const handleSave = () => {
     if (!name.trim()) {
-      toast.error('Name is required')
+      toast.error(t('profile.nameRequiredError'))
       return
     }
     updateProfile({
@@ -102,7 +104,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       photoUrl: photoUrl || undefined,
       monthlyIncome: monthlyIncome ? parseFloat(monthlyIncome) : undefined,
     })
-    toast.success('Profile saved')
+    toast.success(t('profile.profileSavedToast'))
     onClose()
   }
 
@@ -121,7 +123,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
           type="button"
           onClick={() => fileRef.current?.click()}
           className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-border group"
-          aria-label="Change profile photo"
+          aria-label={t('profile.changePhotoAria')}
         >
           {photoUrl ? (
             <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -134,7 +136,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
             <Camera size={20} className="text-white" />
           </div>
         </button>
-        <p className="text-[#444444] text-xs">Tap to change photo</p>
+        <p className="text-[#444444] text-xs">{t('profile.changePhoto')}</p>
         <input
           ref={fileRef}
           type="file"
@@ -147,13 +149,13 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       {/* Name */}
       <div className="space-y-1.5">
         <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
-          Full Name
+          {t('profile.fullName')}
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
+          placeholder={t('profile.namePlaceholder')}
           className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-[#F5F5F5] text-sm placeholder:text-[#444444] focus:outline-none focus:border-accent-red focus:shadow-red-glow transition-all"
         />
       </div>
@@ -161,7 +163,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       {/* DOB */}
       <div className="space-y-1.5">
         <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
-          Date of Birth
+          {t('profile.dateOfBirth')}
         </label>
         <input
           type="date"
@@ -174,7 +176,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       {/* Biological Sex */}
       <div className="space-y-2">
         <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
-          Biological Sex
+          {t('onboarding.profile.sex')}
         </label>
         <PillSelector<BiologicalSex>
           options={SEX_OPTIONS}
@@ -186,7 +188,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       {/* Language */}
       <div className="space-y-2">
         <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
-          Language
+          {t('profile.language')}
         </label>
         <PillSelector<Language>
           options={LANGUAGE_OPTIONS}
@@ -198,7 +200,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       {/* Currency */}
       <div className="space-y-2">
         <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
-          Currency
+          {t('profile.currency')}
         </label>
         <PillSelector<Currency>
           options={CURRENCY_OPTIONS}
@@ -210,7 +212,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
       {/* Monthly Income */}
       <div className="space-y-1.5">
         <label className="text-[#888888] text-xs font-heading uppercase tracking-wider">
-          Monthly Income <span style={{ color: '#444444' }}>(optional)</span>
+          {t('profile.monthlyIncome')} <span style={{ color: '#444444' }}>({t('common.optional')})</span>
         </label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: '#888888', fontFamily: 'system-ui, sans-serif' }}>
@@ -222,7 +224,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
             step="1"
             value={monthlyIncome}
             onChange={(e) => setMonthlyIncome(e.target.value)}
-            placeholder="e.g. 3000"
+            placeholder={t('profile.monthlyIncomePlaceholder')}
             className="w-full bg-bg-elevated border border-border rounded-lg pl-8 pr-3 py-2.5 text-[#F5F5F5] text-sm placeholder:text-[#444444] focus:outline-none focus:border-accent-red focus:shadow-red-glow transition-all"
           />
         </div>
@@ -235,7 +237,7 @@ export function EditProfileForm({ onClose }: EditProfileFormProps) {
         className="w-full bg-accent-red text-white font-heading font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 hover:bg-red-600 transition-colors"
       >
         <Save size={16} />
-        Save Profile
+        {t('profile.saveProfile')}
       </motion.button>
     </div>
   )

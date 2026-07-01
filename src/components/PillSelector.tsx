@@ -5,9 +5,10 @@ interface PillSelectorProps {
   value: string | string[]
   onChange: (v: string | string[]) => void
   multi?: boolean
+  labels?: Record<string, string>
 }
 
-export function PillSelector({ options, value, onChange, multi = false }: PillSelectorProps) {
+export function PillSelector({ options, value, onChange, multi = false, labels }: PillSelectorProps) {
   const isActive = (option: string): boolean => {
     if (multi) {
       return Array.isArray(value) && value.includes(option)
@@ -37,7 +38,7 @@ export function PillSelector({ options, value, onChange, multi = false }: PillSe
           className={cn('pill', isActive(option) && 'active')}
           onClick={() => handleClick(option)}
         >
-          {option}
+          {labels?.[option] ?? option}
         </button>
       ))}
     </div>

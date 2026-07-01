@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SocialFields } from '@/types'
 import { GaugeInput } from '@/components/GaugeInput'
 import { PillSelector } from '@/components/PillSelector'
@@ -10,7 +11,14 @@ interface SocialFormProps {
 }
 
 const SETTINGS = ['Zuhause', 'Draußen', 'Restaurant', 'Bar', 'Online', 'Arbeit', 'Sonstiges']
+const SETTING_KEYS = ['zuhause', 'draussen', 'restaurant', 'bar', 'online', 'arbeit', 'sonstiges']
+
 const PLATFORMS = ['Instagram', 'TikTok', 'YouTube', 'WhatsApp', 'Twitter', 'Reddit', 'Sonstiges']
+const PLATFORM_KEYS = ['instagram', 'tiktok', 'youtube', 'whatsapp', 'twitter', 'reddit', 'sonstiges']
+
+function labelMap(t: (key: string) => string, ns: string, values: readonly string[], keys: readonly string[]): Record<string, string> {
+  return Object.fromEntries(values.map((v, i) => [v, t(`forms.social.${ns}.${keys[i]}`)]))
+}
 
 function calcTimeDiff(start?: string, end?: string): number | undefined {
   if (!start || !end) return undefined
@@ -43,8 +51,11 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
 }
 
 export function SocialForm({ fields, onChange }: SocialFormProps) {
+  const { t } = useTranslation()
   const [showMore, setShowMore] = useState(false)
   const [showBreakdown, setShowBreakdown] = useState(false)
+  const settingLabels = labelMap(t, 'settings', SETTINGS, SETTING_KEYS)
+  const platformLabels = labelMap(t, 'platforms', PLATFORMS, PLATFORM_KEYS)
 
   useEffect(() => {
     const auto = calcTimeDiff(fields.startTime, fields.endTime)
@@ -60,25 +71,26 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
     <div className="space-y-4">
       {/* Who */}
       <Input
-        label="Mit wem?"
+        label={t('forms.social.withWhom')}
         value={fields.who ?? ''}
         onChange={(v) => onChange({ ...fields, who: v || undefined })}
-        placeholder="Namen, Gruppe..."
+        placeholder={t('forms.social.withWhomPlaceholder')}
       />
 
       {/* Activity */}
       <Input
-        label="Aktivität"
+        label={t('forms.social.activity')}
         value={fields.activity ?? ''}
         onChange={(v) => onChange({ ...fields, activity: v || undefined })}
-        placeholder="z.B. Abendessen, Sport, Gespräch..."
+        placeholder={t('forms.social.activityPlaceholder')}
       />
 
       {/* Setting */}
       <div>
-        <label className="input-label">Ort / Umgebung</label>
+        <label className="input-label">{t('forms.social.location')}</label>
         <PillSelector
           options={SETTINGS}
+          labels={settingLabels}
           value={fields.setting ?? ''}
           onChange={(v) => onChange({ ...fields, setting: v as string })}
         />
@@ -87,7 +99,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
       {/* Start + End time */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="input-label">Start</label>
+          <label className="input-label">{t('forms.social.start')}</label>
           <input
             className="input-field"
             type="time"
@@ -97,7 +109,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
           />
         </div>
         <div>
-          <label className="input-label">Ende</label>
+          <label className="input-label">{t('forms.social.end')}</label>
           <input
             className="input-field"
             type="time"
@@ -112,19 +124,19 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
           <span className="font-mono text-base font-bold" style={{ color: '#06B6D4' }}>
             {hours > 0 ? `${hours}h ` : ''}{mins}m
           </span>
-          <span className="text-xs ml-1" style={{ color: '#444444' }}>Dauer</span>
+          <span className="text-xs ml-1" style={{ color: '#444444' }}>{t('forms.social.duration')}</span>
         </div>
       )}
 
       {/* Energy before + after gauges */}
       <GaugeInput
-        label="Energie vorher"
+        label={t('forms.social.energyBefore')}
         value={fields.energyBefore ?? 0}
         onChange={(v) => onChange({ ...fields, energyBefore: v })}
         color="#06B6D4"
       />
       <GaugeInput
-        label="Energie danach"
+        label={t('forms.social.energyAfter')}
         value={fields.energyAfter === 'energized' ? 8 : fields.energyAfter === 'neutral' ? 5 : fields.energyAfter === 'drained' ? 2 : 0}
         onChange={(v) => {
           const val = v >= 7 ? 'energized' : v >= 4 ? 'neutral' : 'drained'
@@ -133,7 +145,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
         color="#06B6D4"
       />
       <GaugeInput
-        label="Qualität"
+        label={t('forms.social.quality')}
         value={fields.quality ?? 0}
         onChange={(v) => onChange({ ...fields, quality: v })}
         color="#06B6D4"
@@ -145,7 +157,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
         onClick={() => setShowMore(!showMore)}
       >
         <span>{showMore ? '▲' : '▼'}</span>
-        <span>{showMore ? 'Weniger' : 'Zeit-Aufschlüsselung'}</span>
+        <span>{showMore ? t('forms.lessDetails') : t('forms.social.timeBreakdown')}</span>
       </button>
 
       {showMore && (
@@ -154,11 +166,12 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
           <div className="space-y-3">
             {/* Social Media */}
             <div>
-              <label className="input-label">Social Media</label>
+              <label className="input-label">{t('forms.social.socialMedia')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <PillSelector
                     options={PLATFORMS}
+                    labels={platformLabels}
                     value={fields.socialMediaPlatform ?? ''}
                     onChange={(v) => onChange({ ...fields, socialMediaPlatform: v as string })}
                   />
@@ -171,7 +184,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
                     step="5"
                     value={fields.socialMediaMinutes ?? ''}
                     onChange={(e) => onChange({ ...fields, socialMediaMinutes: parseInt(e.target.value) || undefined })}
-                    placeholder="Minuten"
+                    placeholder={t('forms.social.minutesPlaceholder')}
                     style={{ borderRadius: 0 }}
                   />
                 </div>
@@ -180,12 +193,12 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
 
             {/* Me-Time */}
             <div>
-              <label className="input-label">Me-Time</label>
+              <label className="input-label">{t('forms.social.meTime')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   value={fields.meTimeActivity ?? ''}
                   onChange={(v) => onChange({ ...fields, meTimeActivity: v || undefined })}
-                  placeholder="Aktivität..."
+                  placeholder={t('forms.social.meTimeActivityPlaceholder')}
                 />
                 <input
                   className="input-field"
@@ -194,7 +207,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
                   step="5"
                   value={fields.meTimeMinutes ?? ''}
                   onChange={(e) => onChange({ ...fields, meTimeMinutes: parseInt(e.target.value) || undefined })}
-                  placeholder="Minuten"
+                  placeholder={t('forms.social.minutesPlaceholder')}
                   style={{ borderRadius: 0 }}
                 />
               </div>
@@ -202,9 +215,9 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
 
             {/* Friend / Family / Partner minutes */}
             {[
-              { label: 'Freunde', key: 'friendMinutes' as const },
-              { label: 'Familie', key: 'familyMinutes' as const },
-              { label: 'Partner', key: 'partnerMinutes' as const },
+              { label: t('forms.social.friends'), key: 'friendMinutes' as const },
+              { label: t('forms.social.family'), key: 'familyMinutes' as const },
+              { label: t('forms.social.partner'), key: 'partnerMinutes' as const },
             ].map(({ label, key }) => (
               <div key={key} className="flex items-center gap-3">
                 <label className="input-label mb-0 w-20 flex-shrink-0">{label}</label>
@@ -215,7 +228,7 @@ export function SocialForm({ fields, onChange }: SocialFormProps) {
                   step="5"
                   value={fields[key] ?? ''}
                   onChange={(e) => onChange({ ...fields, [key]: parseInt(e.target.value) || undefined })}
-                  placeholder="Minuten"
+                  placeholder={t('forms.social.minutesPlaceholder')}
                   style={{ borderRadius: 0 }}
                 />
               </div>

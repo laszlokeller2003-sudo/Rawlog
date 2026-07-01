@@ -15,6 +15,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { TrendingDown, TrendingUp } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useEntriesStore } from '@/stores/useEntriesStore'
 import { useProfileStore } from '@/stores/useProfileStore'
 import { formatCurrency, toDateString } from '@/lib/utils'
@@ -81,6 +82,7 @@ const PIE_COLORS: Record<string, string> = {
 }
 
 export function FinanceDashboard() {
+  const { t } = useTranslation()
   const { entries } = useEntriesStore()
   const { profile } = useProfileStore()
   const currency = profile.currency
@@ -174,7 +176,7 @@ export function FinanceDashboard() {
         else exp += amt
       })
       months.push({
-        label: d.toLocaleDateString('en', { month: 'short' }),
+        label: d.toLocaleDateString(profile.language === 'de' ? 'de' : 'en', { month: 'short' }),
         income: parseFloat(inc.toFixed(2)),
         expenses: parseFloat(exp.toFixed(2)),
       })
@@ -257,12 +259,12 @@ export function FinanceDashboard() {
     >
       {/* This Month Summary */}
       <div>
-        <SectionHeader title="This Month" />
+        <SectionHeader title={t('dashboards.financeD.thisMonth')} />
         <Card>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="text-center">
               <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>
-                Income
+                {t('dashboards.financeD.income')}
               </div>
               <div className="font-mono font-bold text-lg" style={{ color: '#22C55E' }}>
                 {formatCurrency(income, currency)}
@@ -270,7 +272,7 @@ export function FinanceDashboard() {
             </div>
             <div className="text-center">
               <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>
-                Expenses
+                {t('dashboards.financeD.expenses')}
               </div>
               <div className="font-mono font-bold text-lg" style={{ color: '#FF2020' }}>
                 {formatCurrency(expenses, currency)}
@@ -278,7 +280,7 @@ export function FinanceDashboard() {
             </div>
             <div className="text-center">
               <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>
-                Net
+                {t('dashboards.financeD.net')}
               </div>
               <div
                 className="font-mono font-bold text-lg"
@@ -292,7 +294,7 @@ export function FinanceDashboard() {
           {/* Savings Rate */}
           <div>
             <div className="flex justify-between mb-1.5">
-              <span className="text-xs" style={{ color: '#888888' }}>Savings Rate</span>
+              <span className="text-xs" style={{ color: '#888888' }}>{t('dashboards.financeD.savingsRate')}</span>
               <span className="text-xs font-mono" style={{ color: '#22C55E' }}>{savingsRate}%</span>
             </div>
             <div className="h-2 rounded-full overflow-hidden" style={{ background: '#242424' }}>
@@ -307,7 +309,7 @@ export function FinanceDashboard() {
 
       {/* Income vs Expenses Chart */}
       <div>
-        <SectionHeader title="Income vs Expenses (6M)" />
+        <SectionHeader title={t('dashboards.financeD.incomeVsExpenses')} />
         <Card>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={last6MonthsData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
@@ -328,8 +330,8 @@ export function FinanceDashboard() {
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#888888' }}
               />
-              <Bar dataKey="income" fill="#22C55E" radius={[2, 2, 0, 0]} name="Income" />
-              <Bar dataKey="expenses" fill="#FF2020" radius={[2, 2, 0, 0]} name="Expenses" />
+              <Bar dataKey="income" fill="#22C55E" radius={[2, 2, 0, 0]} name={t('dashboards.financeD.income') as string} />
+              <Bar dataKey="expenses" fill="#FF2020" radius={[2, 2, 0, 0]} name={t('dashboards.financeD.expenses') as string} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -337,7 +339,7 @@ export function FinanceDashboard() {
 
       {/* 14-Day Daily Spend vs Budget */}
       <div>
-        <SectionHeader title={profile.dailyBudget ? `Tagesausgaben vs ${formatCurrency(profile.dailyBudget, currency)} Budget` : 'Tagesausgaben (14 Tage)'} />
+        <SectionHeader title={profile.dailyBudget ? t('dashboards.financeD.dailySpendBudget', { amount: formatCurrency(profile.dailyBudget, currency) }) : t('dashboards.financeD.dailySpend14')} />
         <Card>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={daily14Data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -345,13 +347,13 @@ export function FinanceDashboard() {
               <XAxis dataKey="label" tick={{ fill: '#888888', fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#888888', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip {...tooltipStyle} formatter={(v: any) => formatCurrency(v, currency)} />
-              <Bar dataKey="spend" name="Ausgaben" radius={[2, 2, 0, 0]}>
+              <Bar dataKey="spend" name={t('dashboards.financeD.expenses') as string} radius={[2, 2, 0, 0]}>
                 {daily14Data.map((d, i) => (
                   <Cell key={i} fill={profile.dailyBudget && d.spend > profile.dailyBudget ? '#FF2020' : '#22C55E'} />
                 ))}
               </Bar>
               {profile.dailyBudget && (
-                <ReferenceLine y={profile.dailyBudget} stroke="#EAB308" strokeDasharray="4 2" label={{ value: 'Budget', fill: '#EAB308', fontSize: 10 }} />
+                <ReferenceLine y={profile.dailyBudget} stroke="#EAB308" strokeDasharray="4 2" label={{ value: t('dashboards.financeD.budget') as string, fill: '#EAB308', fontSize: 10 }} />
               )}
             </BarChart>
           </ResponsiveContainer>
@@ -361,15 +363,15 @@ export function FinanceDashboard() {
       {/* Impulse Buys */}
       {impulseBuys.count > 0 && (
         <div>
-          <SectionHeader title="Impulskäufe diesen Monat" />
+          <SectionHeader title={t('dashboards.financeD.impulseBuysThisMonth')} />
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>Anzahl</div>
+                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>{t('dashboards.financeD.count')}</div>
                 <div className="font-mono font-bold text-2xl" style={{ color: '#FF2020' }}>{impulseBuys.count}</div>
               </div>
               <div className="text-right">
-                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>Gesamt</div>
+                <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>{t('dashboards.financeD.total')}</div>
                 <div className="font-mono font-bold text-2xl" style={{ color: '#FF2020' }}>{formatCurrency(impulseBuys.total, currency)}</div>
               </div>
             </div>
@@ -380,7 +382,7 @@ export function FinanceDashboard() {
       {/* Spending by Category Pie */}
       {spendingByTag.length > 0 && (
         <div>
-          <SectionHeader title="Spending Breakdown" />
+          <SectionHeader title={t('dashboards.financeD.spendingBreakdown')} />
           <Card>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
@@ -411,11 +413,11 @@ export function FinanceDashboard() {
 
       {/* Top Expenses */}
       <div>
-        <SectionHeader title="Top Expenses This Month" />
+        <SectionHeader title={t('dashboards.financeD.topExpensesThisMonth')} />
         <Card className="p-0">
           {topExpenses.length === 0 ? (
             <div className="p-4">
-              <EmptyState message="No expenses logged this month" />
+              <EmptyState message={t('dashboards.financeD.noExpensesThisMonth')} />
             </div>
           ) : (
             <div className="divide-y" style={{ borderColor: '#242424' }}>
@@ -446,11 +448,11 @@ export function FinanceDashboard() {
 
       {/* Monthly Comparison */}
       <div>
-        <SectionHeader title="Monthly Comparison" />
+        <SectionHeader title={t('dashboards.financeD.monthlyComparison')} />
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs mb-1" style={{ color: '#444444' }}>vs Last Month</div>
+              <div className="text-xs mb-1" style={{ color: '#444444' }}>{t('dashboards.financeD.vsLastMonth')}</div>
               <div className="flex items-center gap-2">
                 {monthChange <= 0 ? (
                   <TrendingDown size={16} style={{ color: '#22C55E' }} />
@@ -466,12 +468,12 @@ export function FinanceDashboard() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs mb-1" style={{ color: '#444444' }}>This Month</div>
+              <div className="text-xs mb-1" style={{ color: '#444444' }}>{t('dashboards.financeD.thisMonth')}</div>
               <div className="font-mono text-sm font-bold" style={{ color: '#F5F5F5' }}>
                 {formatCurrency(thisMonthTotal, currency)}
               </div>
               <div className="text-xs" style={{ color: '#444444' }}>
-                Last: {formatCurrency(lastMonthTotal, currency)}
+                {t('dashboards.financeD.last')}: {formatCurrency(lastMonthTotal, currency)}
               </div>
             </div>
           </div>
@@ -480,12 +482,12 @@ export function FinanceDashboard() {
 
       {/* Net Worth Tracker */}
       <div>
-        <SectionHeader title="Net Worth Tracker" />
+        <SectionHeader title={t('dashboards.financeD.netWorthTracker')} />
         <Card className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs block mb-1" style={{ color: '#888888' }}>
-                Assets ({currency})
+                {t('dashboards.financeD.assets')} ({currency})
               </label>
               <input
                 type="number"
@@ -504,7 +506,7 @@ export function FinanceDashboard() {
             </div>
             <div>
               <label className="text-xs block mb-1" style={{ color: '#888888' }}>
-                Debts ({currency})
+                {t('dashboards.financeD.debts')} ({currency})
               </label>
               <input
                 type="number"
@@ -524,7 +526,7 @@ export function FinanceDashboard() {
           </div>
           <div className="text-center pt-2" style={{ borderTop: '1px solid #242424' }}>
             <div className="text-xs uppercase tracking-wider mb-1" style={{ color: '#444444' }}>
-              Net Worth
+              {t('dashboards.financeD.netWorth')}
             </div>
             <div
               className="font-mono text-3xl font-bold"
@@ -538,11 +540,11 @@ export function FinanceDashboard() {
 
       {/* Subscriptions */}
       <div>
-        <SectionHeader title="Recurring / Subscriptions" />
+        <SectionHeader title={t('dashboards.financeD.recurringSubscriptions')} />
         <Card className="p-0">
           {subscriptions.length === 0 ? (
             <div className="p-4">
-              <EmptyState message="No recurring entries found" />
+              <EmptyState message={t('dashboards.financeD.noRecurringFound')} />
             </div>
           ) : (
             <>
@@ -556,7 +558,7 @@ export function FinanceDashboard() {
                           {entry.note ?? entry.subcategory}
                         </div>
                         <div className="text-xs capitalize" style={{ color: '#444444' }}>
-                          {fields.paymentMethod ?? 'card'}
+                          {fields.paymentMethod ?? t('dashboards.financeD.cardFallback')}
                         </div>
                       </div>
                       <div className="font-mono text-sm" style={{ color: '#EAB308' }}>
@@ -571,7 +573,7 @@ export function FinanceDashboard() {
                 style={{ borderTop: '1px solid #242424' }}
               >
                 <span className="text-sm font-semibold" style={{ color: '#888888' }}>
-                  Monthly Total
+                  {t('dashboards.financeD.monthlyTotal')}
                 </span>
                 <span className="font-mono text-sm font-bold" style={{ color: '#FF2020' }}>
                   {formatCurrency(subscriptionTotal, currency)}
